@@ -129,6 +129,7 @@ class BrowserCoordinator: NSObject, Coordinator {
                     value: .failure(DAppError.cancelled)
                 )
             }
+            coordinator.didCompleted = nil
             self.removeCoordinator(coordinator)
             self.navigationController.dismiss(animated: true, completion: nil)
         }
@@ -173,6 +174,7 @@ class BrowserCoordinator: NSObject, Coordinator {
             case .failure:
                 self.rootViewController.browserViewController.notifyFinish(callbackID: callbackID, value: .failure(DAppError.cancelled))
             }
+            coordinator.didComplete = nil
             self.removeCoordinator(coordinator)
         }
         coordinator.delegate = self
@@ -306,6 +308,7 @@ extension BrowserCoordinator: BrowserViewControllerDelegate {
 
 extension BrowserCoordinator: SignMessageCoordinatorDelegate {
     func didCancel(in coordinator: SignMessageCoordinator) {
+        coordinator.didComplete = nil
         removeCoordinator(coordinator)
     }
 }
@@ -313,6 +316,7 @@ extension BrowserCoordinator: SignMessageCoordinatorDelegate {
 extension BrowserCoordinator: ConfirmCoordinatorDelegate {
     func didCancel(in coordinator: ConfirmCoordinator) {
         navigationController.dismiss(animated: true, completion: nil)
+        coordinator.didCompleted = nil
         removeCoordinator(coordinator)
     }
 }

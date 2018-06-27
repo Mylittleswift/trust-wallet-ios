@@ -57,21 +57,37 @@ class WalletCoordinator: Coordinator {
         keystore.createAccount(with: password) { result in
             switch result {
             case .success(let account):
-                self.pushBackup(for: account)
+                self.keystore.exportMnemonic(account: account) { mnemonicResult in
+                    self.navigationController.hideLoading(animated: false)
+                    switch mnemonicResult {
+                    case .success(let words):
+                        self.pushBackup(for: account, words: words)
+                    case .failure(let error):
+                        self.navigationController.displayError(error: error)
+                    }
+                }
             case .failure(let error):
+                self.navigationController.hideLoading(animated: false)
                 self.navigationController.displayError(error: error)
             }
-            self.navigationController.hideLoading(animated: false)
         }
     }
 
-    func pushBackup(for account: Account) {
-        let controller = BackupViewController(account: account)
+    func pushBackup(for account: Account, words: [String]) {
+        let controller = PassphraseViewController(
+            account: account,
+            words: words,
+            mode: .showAndVerify
+        )
         controller.delegate = self
         controller.navigationItem.backBarButtonItem = nil
         controller.navigationItem.leftBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: self, action: nil)
-        navigationController.setNavigationBarHidden(true, animated: false)
+        navigationController.setNavigationBarHidden(false, animated: false)
         navigationController.pushViewController(controller, animated: true)
+    }
+
+    @objc func done() {
+        delegate?.didCancel(in: self)
     }
 
     @objc func dismiss() {
@@ -91,6 +107,20 @@ class WalletCoordinator: Coordinator {
         coordinator.delegate = self
         addCoordinator(coordinator)
         coordinator.start()
+    }
+
+    func verify(account: Account, words: [String]) {
+        let controller = VerifyPassphraseViewController(account: account, words: words)
+        controller.delegate = self
+        navigationController.pushViewController(controller, animated: true)
+    }
+
+    private func shareMnemonic(in sender: UIView, words: [String]) {
+        let copyValue = words.joined(separator: " ")
+        let activityViewController = UIActivityViewController.make(items: [copyValue])
+        activityViewController.popoverPresentationController?.sourceView = sender
+        activityViewController.popoverPresentationController?.sourceRect = sender.centerRect
+        navigationController.present(activityViewController, animated: true)
     }
 }
 
@@ -113,6 +143,31 @@ extension WalletCoordinator: ImportWalletViewControllerDelegate {
 extension WalletCoordinator: BackupViewControllerDelegate {
     func didPressBackup(account: Account, in viewController: BackupViewController) {
         backup(account: account)
+    }
+}
+
+extension WalletCoordinator: PassphraseViewControllerDelegate {
+    func didPressVerify(in controller: PassphraseViewController, with account: Account, words: [String]) {
+        // show verify
+        verify(account: account, words: words)
+    }
+
+    func didFinish(in controller: PassphraseViewController, with account: Account) {
+        didCreateAccount(account: Wallet(type: .hd(account)))
+    }
+
+    func didPressShare(in controller: PassphraseViewController, sender: UIView, account: Account, words: [String]) {
+        shareMnemonic(in: sender, words: words)
+    }
+}
+
+extension WalletCoordinator: VerifyPassphraseViewControllerDelegate {
+    func didFinish(in controller: VerifyPassphraseViewController, with account: Account) {
+        done()
+    }
+
+    func didPressShare(in controller: VerifyPassphraseViewController, sender: UIView, account: Account, words: [String]) {
+        shareMnemonic(in: sender, words: words)
     }
 }
 

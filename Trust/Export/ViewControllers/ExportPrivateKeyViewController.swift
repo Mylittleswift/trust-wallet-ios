@@ -36,6 +36,15 @@ class ExportPrivateKeyViewConroller: UIViewController {
         return label
     }()
 
+    lazy var copyButton: UIButton = {
+        let button = Button(size: .extraLarge, style: .clear)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(copyAction(_:)), for: .touchUpInside)
+        button.setTitle(NSLocalizedString("Copy", value: "Copy", comment: ""), for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
     let viewModel: ExportPrivateKeyViewModel
 
     init(
@@ -52,6 +61,7 @@ class ExportPrivateKeyViewConroller: UIViewController {
             hintLabel,
             imageView,
             warningKeyLabel,
+            copyButton,
         ])
         stackView.axis = .vertical
         stackView.spacing = 20
@@ -69,8 +79,7 @@ class ExportPrivateKeyViewConroller: UIViewController {
             stackView.bottomAnchor.constraint(lessThanOrEqualTo: view.layoutGuide.bottomAnchor, constant: -StyleLayout.sideMargin),
 
             imageView.heightAnchor.constraint(equalToConstant: Layout.widthAndHeight),
-            imageView.trailingAnchor.constraint(lessThanOrEqualTo: stackView.layoutMarginsGuide.trailingAnchor, constant: StyleLayout.sideMargin * 2.5),
-            imageView.leadingAnchor.constraint(lessThanOrEqualTo: stackView.layoutMarginsGuide.leadingAnchor, constant: StyleLayout.sideMargin * 2.5),
+            imageView.widthAnchor.constraint(equalToConstant: Layout.widthAndHeight),
         ])
 
         createQRCode()
@@ -78,7 +87,7 @@ class ExportPrivateKeyViewConroller: UIViewController {
 
     func createQRCode() {
         displayLoading()
-        DispatchQueue.global(qos: .background).async { [weak self] in
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
             guard let `self` = self else { return }
             let image = QRGenerator.generate(from: self.viewModel.privateKeyString)
             DispatchQueue.main.async {
@@ -86,6 +95,10 @@ class ExportPrivateKeyViewConroller: UIViewController {
                 self.hideLoading()
             }
         }
+    }
+
+    @objc private func copyAction(_ sender: UIButton) {
+        showShareActivity(from: sender, with: [viewModel.privateKeyString])
     }
 
     required init?(coder aDecoder: NSCoder) {

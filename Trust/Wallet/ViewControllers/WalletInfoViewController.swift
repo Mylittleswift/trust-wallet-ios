@@ -10,45 +10,46 @@ protocol WalletInfoViewControllerDelegate: class {
 
 class WalletInfoViewController: FormViewController {
 
-    let wallet: Wallet
+    lazy var viewModel: WalletInfoViewModel = {
+        return WalletInfoViewModel(wallet: wallet)
+    }()
+    let wallet: WalletInfo
+    let storage: WalletStorage
+
     weak var delegate: WalletInfoViewControllerDelegate?
 
-    init(wallet: Wallet) {
+    private struct Values {
+        static let name = "name"
+    }
+
+    init(
+        wallet: WalletInfo,
+        storage: WalletStorage
+    ) {
         self.wallet = wallet
+        self.storage = storage
         super.init(nibName: nil, bundle: nil)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        //navigationItem.title = viewModel.title
-        let types = fieldTypes(for: wallet)
+        navigationItem.title = viewModel.title
 
-        let section = Section()
-
+        let types = viewModel.types
+        let section = Section(footer: viewModel.wallet.wallet.address.description)
         for type in types {
             section.append(link(item: type))
         }
 
         form +++ section
-    }
-
-    func fieldTypes(for wallet: Wallet) -> [WalletInfoType] {
-        switch wallet.type {
-        case .privateKey(let account):
-            return [
-                .exportKeystore(account),
-                .exportPrivateKey(account),
-            ]
-        case .hd(let account):
-            return [
-                .exportRecoveryPhrase(account),
-                .exportPrivateKey(account),
-                .exportKeystore(account),
-            ]
-        case .address:
-            return []
-        }
+// TODO: Enable name field
+//            <<< AppFormAppearance.textFieldFloat(tag: Values.name) {
+//                $0.add(rule: RuleRequired())
+//            }.cellUpdate { [weak self] cell, _ in
+//                cell.textField.placeholder = self?.viewModel.nameTitle
+//                cell.textField.rightViewMode = .always
+//            }
     }
 
     private func link(
@@ -62,13 +63,17 @@ class WalletInfoViewController: FormViewController {
             self.delegate?.didPress(item: item, in: self)
         }.cellSetup { cell, _ in
             cell.imageView?.image = item.image
-            cell.imageView?.layer.cornerRadius = 6
-            cell.imageView?.layer.masksToBounds = true
         }.cellUpdate { cell, _ in
             cell.textLabel?.textAlignment = .left
             cell.textLabel?.textColor = .black
+            cell.accessoryType = .disclosureIndicator
         }
         return button
+    }
+
+    func save() {
+        //wallet.info.name = "Hello"
+        //storage.store(objects: [wallet.info])
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -77,4 +82,3 @@ class WalletInfoViewController: FormViewController {
 }
 
 typealias ButtonRowRow = ButtonRowOf<WalletInfoType>
-

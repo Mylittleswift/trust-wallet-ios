@@ -6,7 +6,7 @@ import TrustKeystore
 import UIKit
 
 protocol WalletCoordinatorDelegate: class {
-    func didFinish(with account: Wallet, in coordinator: WalletCoordinator)
+    func didFinish(with account: WalletInfo, in coordinator: WalletCoordinator)
     func didCancel(in coordinator: WalletCoordinator)
 }
 
@@ -52,7 +52,8 @@ class WalletCoordinator: Coordinator {
     }
 
     func createInstantWallet() {
-        navigationController.displayLoading(text: "Creating wallet...", animated: false)
+        let text = String(format: NSLocalizedString("Creating wallet %@", value: "Creating wallet %@", comment: ""), "...")
+        navigationController.displayLoading(text: text, animated: false)
         let password = PasswordGenerator.generateRandom()
         keystore.createAccount(with: password) { result in
             switch result {
@@ -73,8 +74,16 @@ class WalletCoordinator: Coordinator {
         }
     }
 
+    func configureWhiteNavigation() {
+        navigationController.navigationBar.tintColor = Colors.blue
+        navigationController.navigationBar.barTintColor = .white
+        navigationController.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        navigationController.navigationBar.shadowImage = UIImage()
+    }
+
     func pushBackup(for account: Account, words: [String]) {
-        let controller = PassphraseViewController(
+        configureWhiteNavigation()
+        let controller = DarkPassphraseViewController(
             account: account,
             words: words,
             mode: .showAndVerify
@@ -82,7 +91,7 @@ class WalletCoordinator: Coordinator {
         controller.delegate = self
         controller.navigationItem.backBarButtonItem = nil
         controller.navigationItem.leftBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: self, action: nil)
-        navigationController.setNavigationBarHidden(false, animated: false)
+        navigationController.setNavigationBarHidden(false, animated: true)
         navigationController.pushViewController(controller, animated: true)
     }
 
@@ -94,7 +103,7 @@ class WalletCoordinator: Coordinator {
         delegate?.didCancel(in: self)
     }
 
-    func didCreateAccount(account: Wallet) {
+    func didCreateAccount(account: WalletInfo) {
         delegate?.didFinish(with: account, in: self)
     }
 
@@ -110,17 +119,22 @@ class WalletCoordinator: Coordinator {
     }
 
     func verify(account: Account, words: [String]) {
-        let controller = VerifyPassphraseViewController(account: account, words: words)
+        let controller = DarkVerifyPassphraseViewController(account: account, words: words)
         controller.delegate = self
+        navigationController.setNavigationBarHidden(false, animated: true)
         navigationController.pushViewController(controller, animated: true)
     }
 
     private func shareMnemonic(in sender: UIView, words: [String]) {
         let copyValue = words.joined(separator: " ")
-        let activityViewController = UIActivityViewController.make(items: [copyValue])
-        activityViewController.popoverPresentationController?.sourceView = sender
-        activityViewController.popoverPresentationController?.sourceRect = sender.centerRect
-        navigationController.present(activityViewController, animated: true)
+        navigationController.showShareActivity(from: sender, with: [copyValue])
+    }
+
+    func done(for account: Account) {
+        // TODO
+        let w = Wallet(type: .hd(account))
+        let wallet = WalletInfo(wallet: w, info: WalletObject.from(w))
+        didCreateAccount(account: wallet)
     }
 }
 
@@ -134,8 +148,8 @@ extension WalletCoordinator: WelcomeViewControllerDelegate {
     }
 }
 
-extension WalletCoordinator: ImportWalletViewControllerDelegate {
-    func didImportAccount(account: Wallet, in viewController: ImportWalletViewController) {
+extension WalletCoordinator: ImportWalletViewControllerDelegate {    
+    func didImportAccount(account: WalletInfo, in viewController: ImportWalletViewController) {
         didCreateAccount(account: account)
     }
 }
@@ -153,7 +167,8 @@ extension WalletCoordinator: PassphraseViewControllerDelegate {
     }
 
     func didFinish(in controller: PassphraseViewController, with account: Account) {
-        didCreateAccount(account: Wallet(type: .hd(account)))
+        let wallet = Wallet(type: .hd(account))
+        didCreateAccount(account: WalletInfo(wallet: wallet))
     }
 
     func didPressShare(in controller: PassphraseViewController, sender: UIView, account: Account, words: [String]) {
@@ -163,7 +178,21 @@ extension WalletCoordinator: PassphraseViewControllerDelegate {
 
 extension WalletCoordinator: VerifyPassphraseViewControllerDelegate {
     func didFinish(in controller: VerifyPassphraseViewController, with account: Account) {
-        done()
+        done(for: account)
+    }
+
+    func didSkip(in controller: VerifyPassphraseViewController, with account: Account) {
+        controller.confirm(
+            title: NSLocalizedString("verifyPassphrase.skip.confirm.title", value: "Are you sure you want to skip this step?", comment: ""),
+            message: NSLocalizedString("verifyPassphrase.skip.confirm.message", value: "Loss of backup phrase can put your wallet at risk!", comment: ""),
+            okTitle: NSLocalizedString("Skip", value: "Skip", comment: ""),
+            okStyle: .destructive
+        ) { [weak self] result in
+            switch result {
+            case .success: self?.done(for: account)
+            case .failure: break
+            }
+        }
     }
 
     func didPressShare(in controller: VerifyPassphraseViewController, sender: UIView, account: Account, words: [String]) {
@@ -178,6 +207,7 @@ extension WalletCoordinator: BackupCoordinatorDelegate {
 
     func didFinish(wallet: Wallet, in coordinator: BackupCoordinator) {
         removeCoordinator(coordinator)
-        didCreateAccount(account: wallet)
+        // TODO
+        //didCreateAccount(account: wallet)
     }
 }

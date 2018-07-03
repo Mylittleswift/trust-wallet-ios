@@ -15,18 +15,31 @@ enum PassphraseMode {
     case showAndVerify
 }
 
+class DarkPassphraseViewController: PassphraseViewController {
+
+}
+
 class PassphraseViewController: UIViewController {
 
     let viewModel = PassphraseViewModel()
     let account: Account
     let words: [String]
-    lazy var button: UIButton = {
+    lazy var actionButton: UIButton = {
         let button = Button(size: .large, style: .solid)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(NSLocalizedString("Verify", value: "Verify", comment: ""), for: .normal)
+        button.setTitle(R.string.localizable.next(), for: .normal)
         return button
     }()
-    let subTitleLabel = UILabel()
+    let subTitleLabel: SubtitleBackupLabel = {
+        let label = SubtitleBackupLabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = NSLocalizedString(
+            "passphrase.seed.label.title",
+            value: "These 12 words are the only way to restore your Trust wallet. \nSave them somewhere safe and secret.",
+            comment: ""
+        )
+        return label
+    }()
     let copyButton = Button(size: .extraLarge, style: .clear)
     weak var delegate: PassphraseViewControllerDelegate?
 
@@ -40,23 +53,22 @@ class PassphraseViewController: UIViewController {
 
         super.init(nibName: nil, bundle: nil)
 
-        navigationItem.title = viewModel.title
         view.backgroundColor = viewModel.backgroundColor
 
         setupViews(for: mode)
     }
 
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .default
+    }
+
     func setupViews(for mode: PassphraseMode) {
-        subTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subTitleLabel.textAlignment = .center
-        subTitleLabel.numberOfLines = 0
-        subTitleLabel.text = NSLocalizedString(
-            "passphrase.seed.label.title",
-            value: "These 12 words are the only way to restore your Trust accounts. Save them somewhere safe and secret.",
-            comment: ""
-        )
-        subTitleLabel.font = AppStyle.heading.font
-        subTitleLabel.textColor = AppStyle.heading.textColor
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = viewModel.title
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.font = UIFont.systemFont(ofSize: 18, weight: .regular)
+        titleLabel.textAlignment = .center
 
         copyButton.translatesAutoresizingMaskIntoConstraints = false
         copyButton.setTitle(NSLocalizedString("Copy", value: "Copy", comment: ""), for: .normal)
@@ -65,47 +77,59 @@ class PassphraseViewController: UIViewController {
         let wordsLabel = UILabel()
         wordsLabel.translatesAutoresizingMaskIntoConstraints = false
         wordsLabel.numberOfLines = 0
-        wordsLabel.text = words.joined(separator: ", ")
+        wordsLabel.text = words.joined(separator: "  ")
         wordsLabel.backgroundColor = .clear
-        wordsLabel.font = UIFont.systemFont(ofSize: 22, weight: .regular)
+        wordsLabel.font = UIFont.systemFont(ofSize: 17, weight: .regular)
         wordsLabel.textColor = Colors.black
         wordsLabel.textAlignment = .center
+        wordsLabel.numberOfLines = 3
+        wordsLabel.isUserInteractionEnabled = true
+        wordsLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(copyGesture)))
 
-        let wordBackgroundView = UIView()
+        let wordBackgroundView = PassphraseBackgroundShadow()
         wordBackgroundView.translatesAutoresizingMaskIntoConstraints = false
-        wordBackgroundView.backgroundColor = Colors.veryVeryLightGray
+        wordBackgroundView.isUserInteractionEnabled = true
+
+        let image = UIImageView()
+        image.translatesAutoresizingMaskIntoConstraints = false
+        image.contentMode = .scaleAspectFit
+        image.image = R.image.write_passphrase()
 
         let stackView = UIStackView(arrangedSubviews: [
-            .spacer(height: 10),
+            image,
+            titleLabel,
+            .spacer(),
             subTitleLabel,
-            .spacer(height: 30),
+            .spacer(height: 15),
             wordsLabel,
-            .spacer(height: 30),
+            .spacer(),
             copyButton,
         ])
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
-        stackView.spacing = 15
+        stackView.spacing = 12
         stackView.backgroundColor = .clear
 
         view.addSubview(wordBackgroundView)
         view.addSubview(stackView)
-        view.addSubview(button)
+        view.addSubview(actionButton)
 
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(greaterThanOrEqualTo: view.readableContentGuide.topAnchor),
-            stackView.centerYAnchor.constraint(equalTo: view.readableContentGuide.centerYAnchor, constant: -80),
+            stackView.topAnchor.constraint(greaterThanOrEqualTo: view.readableContentGuide.topAnchor, constant: StyleLayout.sideMargin),
+            stackView.centerYAnchor.constraint(equalTo: view.readableContentGuide.centerYAnchor, constant: -40),
             stackView.leadingAnchor.constraint(equalTo: view.readableContentGuide.leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: view.readableContentGuide.trailingAnchor),
 
-            button.leadingAnchor.constraint(equalTo: view.readableContentGuide.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: view.readableContentGuide.trailingAnchor),
-            button.bottomAnchor.constraint(equalTo: view.readableContentGuide.bottomAnchor, constant: -StyleLayout.sideMargin),
+            actionButton.leadingAnchor.constraint(equalTo: view.readableContentGuide.leadingAnchor),
+            actionButton.trailingAnchor.constraint(equalTo: view.readableContentGuide.trailingAnchor),
+            actionButton.bottomAnchor.constraint(equalTo: view.readableContentGuide.bottomAnchor, constant: -StyleLayout.sideMargin),
 
             wordBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             wordBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            wordBackgroundView.centerYAnchor.constraint(equalTo: wordsLabel.centerYAnchor),
-            wordBackgroundView.heightAnchor.constraint(equalToConstant: 110),
+            wordBackgroundView.topAnchor.constraint(equalTo: wordsLabel.topAnchor, constant: -StyleLayout.sideMargin),
+            wordBackgroundView.bottomAnchor.constraint(equalTo: wordsLabel.bottomAnchor, constant: StyleLayout.sideMargin),
+
+            image.heightAnchor.constraint(equalToConstant: 32),
 
             stackView.centerXAnchor.constraint(equalTo: stackView.centerXAnchor),
         ])
@@ -114,15 +138,19 @@ class PassphraseViewController: UIViewController {
 
         switch mode {
         case .showOnly:
-            button.isHidden = true
+            actionButton.isHidden = true
         case .showAndVerify:
-            button.isHidden = false
+            actionButton.isHidden = false
         }
-        button.addTarget(self, action: #selector(nextAction(_:)), for: .touchUpInside)
+        actionButton.addTarget(self, action: #selector(nextAction(_:)), for: .touchUpInside)
     }
 
     @objc private func copyAction(_ sender: UIButton) {
         delegate?.didPressShare(in: self, sender: sender, account: account, words: words)
+    }
+
+    @objc private func copyGesture(_ sender: UIGestureRecognizer) {
+        delegate?.didPressShare(in: self, sender: sender.view!, account: account, words: words)
     }
 
     @objc private func nextAction(_ sender: UIButton) {

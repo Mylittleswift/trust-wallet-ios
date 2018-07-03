@@ -49,7 +49,7 @@ class TokenViewModel {
 
     var isBuyActionAvailable: Bool {
         switch config.server {
-        case .main, .kovan, .classic, .callisto, .ropsten, .rinkeby, .poa, .sokol, .custom: return false
+        case .main, .kovan, .classic, .callisto, .ropsten, .rinkeby, .poa, .sokol, .gochain, .custom: return false
         }
     }
 
@@ -76,6 +76,20 @@ class TokenViewModel {
 
     var ticker: CoinTicker? {
         return store.coinTicker(for: token)
+    }
+
+    // Market Price
+
+    var marketPrice: String? {
+        return TokensLayout.cell.marketPrice(for: ticker)
+    }
+
+    var marketPriceFont: UIFont {
+        return UIFont.systemFont(ofSize: 14, weight: .regular)
+    }
+
+    var marketPriceTextColor: UIColor {
+        return TokensLayout.cell.fiatAmountTextColor
     }
 
     var totalFiatAmount: String? {

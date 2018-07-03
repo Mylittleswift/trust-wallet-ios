@@ -17,7 +17,7 @@ struct ExportPhraseViewModel {
     }
 
     var title: String {
-        return NSLocalizedString("Recovery Phrase", value: "Recovery Phrase", comment: "")
+        return NSLocalizedString("Backup Phrase", value: "Backup Phrase", comment: "")
     }
 
     var headlineText: String {
@@ -25,7 +25,7 @@ struct ExportPhraseViewModel {
     }
 
     var warningText: String {
-        return NSLocalizedString("export.warningTwo.private.key", value: "Anyone with your recovery phrase will have FULL access to your wallet!", comment: "")
+        return NSLocalizedString("export.warningTwo.private.key", value: "Anyone with your backup phrase will have FULL access to your wallet!", comment: "")
     }
 
     var backgroundColor: UIColor {

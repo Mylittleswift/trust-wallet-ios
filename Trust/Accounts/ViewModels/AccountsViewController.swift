@@ -5,41 +5,50 @@ import UIKit
 import PromiseKit
 
 protocol AccountsViewControllerDelegate: class {
-    func didSelectAccount(account: Wallet, in viewController: AccountsViewController)
-    func didDeleteAccount(account: Wallet, in viewController: AccountsViewController)
-    func didSelectInfoForAccount(account: Wallet, sender: UIView, in viewController: AccountsViewController)
+    func didSelectAccount(account: WalletInfo, in viewController: AccountsViewController)
+    func didDeleteAccount(account: WalletInfo, in viewController: AccountsViewController)
+    func didSelectInfoForAccount(account: WalletInfo, sender: UIView, in viewController: AccountsViewController)
 }
 
 class AccountsViewController: UITableViewController {
     let ensManager: ENSManager
     weak var delegate: AccountsViewControllerDelegate?
-    var headerTitle: String?
     var viewModel: AccountsViewModel {
         return AccountsViewModel(
-            wallets: wallets
+            wallets: accounts
         )
     }
     var hasWallets: Bool {
-        return !keystore.wallets.isEmpty
+        return !accounts.isEmpty
     }
+
     var wallets: [Wallet] = [] {
         didSet {
             tableView.reloadData()
-            configure(viewModel: viewModel)
         }
     }
+
+    var accounts: [WalletInfo] {
+        return wallets.map {
+            return WalletInfo(wallet: $0)
+        }
+    }
+
     private var balances: [Address: Balance?] = [:]
     private var addrNames: [Address: String] = [:]
     private let keystore: Keystore
+    private let walletStorage: WalletStorage
     private let balanceCoordinator: TokensBalanceService
     private let config = Config()
 
     init(
         keystore: Keystore,
+        walletStorage: WalletStorage,
         balanceCoordinator: TokensBalanceService,
         ensManager: ENSManager
     ) {
         self.keystore = keystore
+        self.walletStorage = walletStorage
         self.balanceCoordinator = balanceCoordinator
         self.ensManager = ensManager
         super.init(style: .grouped)
@@ -51,6 +60,7 @@ class AccountsViewController: UITableViewController {
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 60
         tableView.register(R.nib.accountViewCell(), forCellReuseIdentifier: R.nib.accountViewCell.name)
+        configure(viewModel: viewModel)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -65,10 +75,10 @@ class AccountsViewController: UITableViewController {
     }
 
     func configure(viewModel: AccountsViewModel) {
-        title = headerTitle ?? viewModel.title
+        title = viewModel.title
     }
 
-    func wallet(for indexPath: IndexPath) -> Wallet? {
+    func wallet(for indexPath: IndexPath) -> WalletInfo? {
         return viewModel.wallet(for: indexPath)
     }
 
@@ -88,7 +98,7 @@ class AccountsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return (EtherKeystore.current != viewModel.wallet(for: indexPath) || viewModel.isLastWallet)
+        return viewModel.canEditRowAt(for: indexPath)
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
@@ -115,7 +125,7 @@ class AccountsViewController: UITableViewController {
         delegate?.didSelectAccount(account: wallet, in: self)
     }
 
-    func confirmDelete(wallet: Wallet) {
+    func confirmDelete(wallet: WalletInfo) {
         confirm(
             title: NSLocalizedString("accounts.confirm.delete.title", value: "Are you sure you would like to delete this wallet?", comment: ""),
             message: NSLocalizedString("accounts.confirm.delete.message", value: "Make sure you have backup of your wallet.", comment: ""),
@@ -130,9 +140,9 @@ class AccountsViewController: UITableViewController {
         }
     }
 
-    func delete(wallet: Wallet) {
+    func delete(wallet: WalletInfo) {
         navigationController?.displayLoading(text: NSLocalizedString("Deleting", value: "Deleting", comment: ""))
-        keystore.delete(wallet: wallet) { [weak self] result in
+        keystore.delete(wallet: wallet.wallet) { [weak self] result in
             guard let `self` = self else { return }
             self.navigationController?.hideLoading()
             switch result {
@@ -146,7 +156,7 @@ class AccountsViewController: UITableViewController {
     }
 
     private func refreshWalletBalances() {
-       let addresses = wallets.compactMap { $0.address }
+       let addresses = accounts.compactMap { $0.wallet.address }
        var counter = 0
        for address in addresses {
             balanceCoordinator.getEthBalance(for: address, completion: { [weak self] (result) in
@@ -160,7 +170,7 @@ class AccountsViewController: UITableViewController {
     }
 
     private func refreshENSNames() {
-        let addresses = wallets.compactMap { $0.address }
+        let addresses = accounts.compactMap { $0.wallet.address }
         let promises =  addresses.map { ensManager.lookup(address: $0) }
         _ = when(fulfilled: promises).done { [weak self] names in
             for (index, name) in names.enumerated() {
@@ -174,8 +184,8 @@ class AccountsViewController: UITableViewController {
 
     private func getAccountViewModels(for path: IndexPath) -> AccountViewModel {
         let account = self.wallet(for: path)! // Avoid force unwrap
-        let balance = self.balances[account.address].flatMap { $0 }
-        let ensName = self.addrNames[account.address] ?? ""
+        let balance = self.balances[account.wallet.address].flatMap { $0 }
+        let ensName = self.addrNames[account.wallet.address] ?? ""
         let model = AccountViewModel(server: config.server, wallet: account, current: EtherKeystore.current, walletBalance: balance, ensName: ensName)
         return model
     }
@@ -186,7 +196,7 @@ class AccountsViewController: UITableViewController {
 }
 
 extension AccountsViewController: AccountViewCellDelegate {
-    func accountViewCell(_ cell: AccountViewCell, didTapInfoViewForAccount account: Wallet) {
+    func accountViewCell(_ cell: AccountViewCell, didTapInfoViewForAccount account: WalletInfo) {
         self.delegate?.didSelectInfoForAccount(account: account, sender: cell.infoButton, in: self)
     }
 }

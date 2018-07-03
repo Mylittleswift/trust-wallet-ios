@@ -29,6 +29,7 @@ class WalletCoordinatorTests: XCTestCase {
     }
 
     func testCreateInstantWallet() {
+
         let delegate = FakeWalletCoordinatorDelegate()
         let coordinator = WalletCoordinator(
             navigationController: FakeNavigationController(),
@@ -36,7 +37,7 @@ class WalletCoordinatorTests: XCTestCase {
         )
         coordinator.delegate = delegate
 
-        coordinator.start(.createInstantWallet)
+        coordinator.pushBackup(for: .make(), words: [])
 
         XCTAssertTrue(coordinator.navigationController.viewControllers[0] is PassphraseViewController)
     }
@@ -57,14 +58,14 @@ class WalletCoordinatorTests: XCTestCase {
 
 class FakeWalletCoordinatorDelegate: WalletCoordinatorDelegate {
     var didFail: Error? = .none
-    var didFinishAccount: Trust.Wallet? = .none
+    var didFinishAccount: Trust.WalletInfo? = .none
     var didCancel: Bool = false
 
     func didCancel(in coordinator: WalletCoordinator) {
         didCancel = true
     }
 
-    func didFinish(with account: Trust.Wallet, in coordinator: WalletCoordinator) {
+    func didFinish(with account: Trust.WalletInfo, in coordinator: WalletCoordinator) {
         didFinishAccount = account
     }
 

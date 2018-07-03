@@ -4,7 +4,7 @@ import TrustCore
 import UIKit
 
 protocol AccountViewCellDelegate: class {
-    func accountViewCell(_ cell: AccountViewCell, didTapInfoViewForAccount _: Wallet)
+    func accountViewCell(_ cell: AccountViewCell, didTapInfoViewForAccount _: WalletInfo)
 }
 
 class AccountViewCell: UITableViewCell {

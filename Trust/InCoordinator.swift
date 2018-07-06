@@ -82,6 +82,8 @@ class InCoordinator: Coordinator {
 
         let realm = self.realm(for: migration.config)
         let sharedRealm = self.realm(for: sharedMigration.config)
+
+        let walletStorage = WalletStorage(realm: sharedRealm)
         let tokensStorage = TokensDataStore(realm: realm, config: config)
         let balanceCoordinator =  TokensBalanceService()
         let viewModel = InCoordinatorViewModel(config: config)
@@ -99,7 +101,7 @@ class InCoordinator: Coordinator {
         )
         let nonceProvider = GetNonceProvider(storage: transactionsStorage)
         let session = WalletSession(
-            account: account.wallet,
+            account: account,
             config: config,
             balanceCoordinator: balance,
             nonceProvider: nonceProvider
@@ -139,8 +141,6 @@ class InCoordinator: Coordinator {
         walletCoordinator.start()
         addCoordinator(walletCoordinator)
 
-        let walletStorage = WalletStorage(realm: realm)
-
         let settingsCoordinator = SettingsCoordinator(
             keystore: keystore,
             session: session,
@@ -168,7 +168,7 @@ class InCoordinator: Coordinator {
 
         showTab(.wallet(.none))
 
-        keystore.recentlyUsedWallet = account.wallet
+        keystore.recentlyUsedWallet = account
 
         // activate all view controllers.
         [Tabs.wallet(.none), Tabs.transactions].forEach {
@@ -215,7 +215,6 @@ class InCoordinator: Coordinator {
         navigationController.dismiss(animated: false, completion: nil)
         coordinator.navigationController.dismiss(animated: true, completion: nil)
         coordinator.stop()
-        CookiesStore.delete()
         removeAllCoordinators()
         showTabBar(for: account)
     }
@@ -236,7 +235,7 @@ class InCoordinator: Coordinator {
         let session = transactionCoordinator.session
         let tokenStorage = transactionCoordinator.tokensStorage
 
-        switch (type, session.account.type) {
+        switch (type, session.account.wallet.type) {
         case (.send, .privateKey), (.send, .hd), (.request, _):
             let coordinator = PaymentCoordinator(
                 flow: type,

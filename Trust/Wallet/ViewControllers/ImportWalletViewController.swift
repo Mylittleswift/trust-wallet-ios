@@ -6,7 +6,7 @@ import TrustCore
 import QRCodeReaderViewController
 
 protocol ImportWalletViewControllerDelegate: class {
-    func didImportAccount(account: WalletInfo, in viewController: ImportWalletViewController)
+    func didImportAccount(account: WalletInfo, fields: [WalletInfoField], in viewController: ImportWalletViewController)
 }
 
 class ImportWalletViewController: FormViewController {
@@ -19,6 +19,7 @@ class ImportWalletViewController: FormViewController {
         static let keystore = "keystore"
         static let privateKey = "privateKey"
         static let password = "password"
+        static let name = "name"
         static let watch = "watch"
         static let mnemonic = "mnemonic"
     }
@@ -40,6 +41,9 @@ class ImportWalletViewController: FormViewController {
     }
     var watchRow: TextFloatLabelRow? {
         return form.rowBy(tag: Values.watch)
+    }
+    var nameRow: TextFloatLabelRow? {
+        return form.rowBy(tag: Values.name)
     }
 
     weak var delegate: ImportWalletViewControllerDelegate?
@@ -71,6 +75,8 @@ class ImportWalletViewController: FormViewController {
             qrAction: { [unowned self] in self.openReader() }
         )
 
+        let initialName = WalletInfo.initialName(index: keystore.wallets.count)
+
         form
             +++ Section()
             <<< SegmentedRow<String>(Values.segment) {
@@ -99,7 +105,7 @@ class ImportWalletViewController: FormViewController {
             }.cellUpdate { cell, _ in
                 cell.textField.isSecureTextEntry = true
                 cell.textField.textAlignment = .left
-                cell.textField.placeholder = NSLocalizedString("Password", value: "Password", comment: "")
+                cell.textField.placeholder = R.string.localizable.password()
             }
 
             // Private Key
@@ -143,6 +149,15 @@ class ImportWalletViewController: FormViewController {
                 cell.textField.rightViewMode = .always
             }
 
+            // Name
+            +++ Section()
+            <<< AppFormAppearance.textFieldFloat(tag: Values.name) {
+                $0.value = initialName
+            }.cellUpdate { cell, _ in
+                cell.textField.textAlignment = .left
+                cell.textField.placeholder = R.string.localizable.name()
+            }
+
             +++ Section()
             <<< ButtonRow(NSLocalizedString("importWallet.import.button.title", value: "Import", comment: "")) {
                 $0.title = $0.tag
@@ -151,9 +166,9 @@ class ImportWalletViewController: FormViewController {
             }
     }
 
-    func didImport(account: Wallet) {
+    func didImport(account: Wallet, name: String) {
         let walletInfo = WalletInfo(wallet: account)
-        delegate?.didImportAccount(account: walletInfo, in: self)
+        delegate?.didImportAccount(account: walletInfo, fields: [.name(name)], in: self)
     }
 
     func importWallet() {
@@ -165,6 +180,7 @@ class ImportWalletViewController: FormViewController {
         let password = passwordRow?.value ?? ""
         let watchInput = watchRow?.value?.trimmed ?? ""
         let mnemonicInput = mnemonicRow?.value?.trimmed ?? ""
+        let name = nameRow?.value?.trimmed ?? ""
         let words = mnemonicInput.components(separatedBy: " ").map { $0.trimmed.lowercased() }
 
         displayLoading(text: NSLocalizedString("importWallet.importingIndicator.label.title", value: "Importing wallet...", comment: ""), animated: false)
@@ -188,7 +204,7 @@ class ImportWalletViewController: FormViewController {
             self.hideLoading(animated: false)
             switch result {
             case .success(let account):
-                self.didImport(account: account)
+                self.didImport(account: account, name: name)
             case .failure(let error):
                 self.displayError(error: error)
             }
@@ -199,7 +215,7 @@ class ImportWalletViewController: FormViewController {
         //Used for taking screenshots to the App Store by snapshot
         let demoWallet = Wallet(type: .address(Address(string: "0xD663bE6b87A992C5245F054D32C7f5e99f5aCc47")!))
         let walletInfo = WalletInfo(wallet: demoWallet, info: WalletObject.from(demoWallet))
-        delegate?.didImportAccount(account: walletInfo, in: self)
+        delegate?.didImportAccount(account: walletInfo, fields: [], in: self)
     }
 
     @objc func importOptions(sender: UIBarButtonItem) {
@@ -282,5 +298,19 @@ extension ImportWalletViewController: QRCodeReaderDelegate {
         reader.stopScanning()
         setValueForCurrentField(string: result)
         reader.dismiss(animated: true)
+    }
+}
+
+extension WalletInfo {
+    static var emptyName: String {
+        return "ETH " + R.string.localizable.wallet()
+    }
+
+    static func initialName(index numberOfWallets: Int) -> String {
+        return String(format: NSLocalizedString(
+            "importWallet.initialNmae", value: "%@ %@ %@", comment: ""
+        ),
+            "ETH", R.string.localizable.wallet(), "\(numberOfWallets + 1)"
+        )
     }
 }

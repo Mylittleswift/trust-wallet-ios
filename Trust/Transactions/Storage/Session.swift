@@ -9,7 +9,7 @@ enum RefreshType {
 }
 
 class WalletSession {
-    let account: Wallet
+    let account: WalletInfo
     let balanceCoordinator: BalanceCoordinator
     let config: Config
     let chainState: ChainState
@@ -25,7 +25,7 @@ class WalletSession {
     var nonceProvider: NonceProvider
 
     init(
-        account: Wallet,
+        account: WalletInfo,
         config: Config,
         balanceCoordinator: BalanceCoordinator,
         nonceProvider: NonceProvider
@@ -35,8 +35,8 @@ class WalletSession {
         self.chainState = ChainState(config: config)
         self.nonceProvider = nonceProvider
         self.balanceCoordinator = balanceCoordinator
-        self.balanceCoordinator.delegate = self
         self.chainState.start()
+        self.balanceCoordinator.delegate = self
     }
 
     func refresh() {

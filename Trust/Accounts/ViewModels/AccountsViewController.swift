@@ -11,52 +11,38 @@ protocol AccountsViewControllerDelegate: class {
 }
 
 class AccountsViewController: UITableViewController {
-    let ensManager: ENSManager
     weak var delegate: AccountsViewControllerDelegate?
     var viewModel: AccountsViewModel {
         return AccountsViewModel(
-            wallets: accounts
+            wallets: wallets,
+            current: session.account
         )
     }
     var hasWallets: Bool {
-        return !accounts.isEmpty
+        return !wallets.isEmpty
     }
 
-    var wallets: [Wallet] = [] {
+    var wallets: [WalletInfo] = [] {
         didSet {
             tableView.reloadData()
         }
     }
 
-    var accounts: [WalletInfo] {
-        return wallets.map {
-            return WalletInfo(wallet: $0)
-        }
-    }
-
-    private var balances: [Address: Balance?] = [:]
-    private var addrNames: [Address: String] = [:]
     private let keystore: Keystore
-    private let walletStorage: WalletStorage
     private let balanceCoordinator: TokensBalanceService
     private let config = Config()
+    private let session: WalletSession
 
     init(
         keystore: Keystore,
-        walletStorage: WalletStorage,
-        balanceCoordinator: TokensBalanceService,
-        ensManager: ENSManager
+        session: WalletSession,
+        balanceCoordinator: TokensBalanceService
     ) {
         self.keystore = keystore
-        self.walletStorage = walletStorage
+        self.session = session
         self.balanceCoordinator = balanceCoordinator
-        self.ensManager = ensManager
         super.init(style: .grouped)
-        fetch()
-    }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 60
         tableView.register(R.nib.accountViewCell(), forCellReuseIdentifier: R.nib.accountViewCell.name)
@@ -65,9 +51,8 @@ class AccountsViewController: UITableViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
         fetch()
-        refreshWalletBalances()
-        refreshENSNames()
     }
 
     func fetch() {
@@ -91,7 +76,7 @@ class AccountsViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = self.tableView.dequeueReusableCell(withIdentifier: R.nib.accountViewCell.name, for: indexPath) as! AccountViewCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: R.nib.accountViewCell.name, for: indexPath) as! AccountViewCell
         cell.viewModel = getAccountViewModels(for: indexPath)
         cell.delegate = self
         return cell
@@ -141,7 +126,7 @@ class AccountsViewController: UITableViewController {
     }
 
     func delete(wallet: WalletInfo) {
-        navigationController?.displayLoading(text: NSLocalizedString("Deleting", value: "Deleting", comment: ""))
+        navigationController?.displayLoading(text: R.string.localizable.deleting())
         keystore.delete(wallet: wallet.wallet) { [weak self] result in
             guard let `self` = self else { return }
             self.navigationController?.hideLoading()
@@ -155,39 +140,12 @@ class AccountsViewController: UITableViewController {
         }
     }
 
-    private func refreshWalletBalances() {
-       let addresses = accounts.compactMap { $0.wallet.address }
-       var counter = 0
-       for address in addresses {
-            balanceCoordinator.getEthBalance(for: address, completion: { [weak self] (result) in
-                self?.balances[address] = result.value
-                counter += 1
-                if counter == addresses.count {
-                    self?.tableView.reloadData()
-                }
-            })
-        }
-    }
-
-    private func refreshENSNames() {
-        let addresses = accounts.compactMap { $0.wallet.address }
-        let promises =  addresses.map { ensManager.lookup(address: $0) }
-        _ = when(fulfilled: promises).done { [weak self] names in
-            for (index, name) in names.enumerated() {
-                self?.addrNames[addresses[index]] = name
-            }
-            self?.tableView.reloadData()
-        }.catch { error in
-            print(error)
-        }
-    }
-
     private func getAccountViewModels(for path: IndexPath) -> AccountViewModel {
-        let account = self.wallet(for: path)! // Avoid force unwrap
-        let balance = self.balances[account.wallet.address].flatMap { $0 }
-        let ensName = self.addrNames[account.wallet.address] ?? ""
-        let model = AccountViewModel(server: config.server, wallet: account, current: EtherKeystore.current, walletBalance: balance, ensName: ensName)
-        return model
+        return AccountViewModel(
+            server: config.server,
+            wallet: self.wallet(for: path)!,
+            current: session.account
+        )
     }
 
     required init?(coder aDecoder: NSCoder) {

@@ -6,6 +6,11 @@ import TrustKeystore
 
 protocol WalletInfoViewControllerDelegate: class {
     func didPress(item: WalletInfoType, in controller: WalletInfoViewController)
+    func didPressSave(wallet: WalletInfo, fields: [WalletInfoField], in controller: WalletInfoViewController)
+}
+
+enum WalletInfoField {
+    case name(String)
 }
 
 class WalletInfoViewController: FormViewController {
@@ -13,8 +18,10 @@ class WalletInfoViewController: FormViewController {
     lazy var viewModel: WalletInfoViewModel = {
         return WalletInfoViewModel(wallet: wallet)
     }()
+    var segmentRow: TextFloatLabelRow? {
+        return form.rowBy(tag: Values.name)
+    }
     let wallet: WalletInfo
-    let storage: WalletStorage
 
     weak var delegate: WalletInfoViewControllerDelegate?
 
@@ -22,12 +29,14 @@ class WalletInfoViewController: FormViewController {
         static let name = "name"
     }
 
+    lazy var saveBarButtonItem: UIBarButtonItem = {
+        return UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(save))
+    }()
+
     init(
-        wallet: WalletInfo,
-        storage: WalletStorage
+        wallet: WalletInfo
     ) {
         self.wallet = wallet
-        self.storage = storage
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -35,21 +44,25 @@ class WalletInfoViewController: FormViewController {
         super.viewDidLoad()
 
         navigationItem.title = viewModel.title
+        navigationItem.rightBarButtonItem = saveBarButtonItem
 
         let types = viewModel.types
-        let section = Section(footer: viewModel.wallet.wallet.address.description)
+        let section = Section(footer: viewModel.wallet.address.description)
         for type in types {
             section.append(link(item: type))
         }
 
-        form +++ section
-// TODO: Enable name field
-//            <<< AppFormAppearance.textFieldFloat(tag: Values.name) {
-//                $0.add(rule: RuleRequired())
-//            }.cellUpdate { [weak self] cell, _ in
-//                cell.textField.placeholder = self?.viewModel.nameTitle
-//                cell.textField.rightViewMode = .always
-//            }
+        form +++ Section()
+
+        <<< AppFormAppearance.textFieldFloat(tag: Values.name) {
+            $0.add(rule: RuleRequired())
+            $0.value = self.wallet.info.name
+        }.cellUpdate { [weak self] cell, _ in
+            cell.textField.placeholder = self?.viewModel.nameTitle
+            cell.textField.rightViewMode = .always
+        }
+
+        +++ section
     }
 
     private func link(
@@ -71,9 +84,9 @@ class WalletInfoViewController: FormViewController {
         return button
     }
 
-    func save() {
-        //wallet.info.name = "Hello"
-        //storage.store(objects: [wallet.info])
+    @objc func save() {
+        let name = segmentRow?.value ?? ""
+        delegate?.didPressSave(wallet: wallet, fields: [.name(name)], in: self)
     }
 
     required init?(coder aDecoder: NSCoder) {

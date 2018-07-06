@@ -3,7 +3,7 @@
 import Foundation
 import RealmSwift
 
-class WalletStorage {
+public class WalletStorage {
 
     let realm: Realm
 
@@ -17,11 +17,5 @@ class WalletStorage {
             return WalletObject.from(wallet)
         }
         return foundWallet
-    }
-
-    func store(objects: [WalletObject]) {
-        try? realm.write {
-            realm.add(objects, update: true)
-        }
     }
 }

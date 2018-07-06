@@ -40,6 +40,21 @@ extension UIView {
         return view
     }
 
+    static func label(
+        style: AppStyle,
+        text: String,
+        aligment: NSTextAlignment = .center
+    ) -> UIView {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = text
+        label.textColor = style.textColor
+        label.font = style.font
+        label.textAlignment = aligment
+        label.adjustsFontSizeToFitWidth = true
+        return label
+    }
+
     static func spacerWidth(_ width: CGFloat = 1, backgroundColor: UIColor = .clear, alpha: CGFloat = 1, priority: UILayoutPriority = UILayoutPriority(rawValue: 1000)) -> UIView {
         let view = UIView(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false

@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-class TokenHeaderView: UIView {
+final class TokenHeaderView: UIView {
 
     private struct Layout {
         static let imageSize: CGFloat = 70
@@ -36,8 +36,8 @@ class TokenHeaderView: UIView {
         return imageView
     }()
 
-    lazy var buttonsView: TransactionsFooterView = {
-        let footerView = TransactionsFooterView(
+    lazy var buttonsView: ButtonsFooterView = {
+        let footerView = ButtonsFooterView(
             frame: .zero,
             bottomOffset: 5
         )

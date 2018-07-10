@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 
-class ChangellyBuyWidget {
+final class ChangellyBuyWidget {
 
     private let amount: Int
     private let address: String

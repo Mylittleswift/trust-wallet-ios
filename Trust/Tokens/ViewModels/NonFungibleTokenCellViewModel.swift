@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-struct NonFungibleTokenCellViewModel {
+final class NonFungibleTokenCellViewModel {
 
     private let tokens: [NonFungibleTokenObject]
 

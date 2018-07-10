@@ -1,11 +1,11 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import Eureka
 import Branch
 import Crashlytics
 
-class AnaliticsViewController: FormViewController {
+final class AnaliticsViewController: FormViewController {
 
     private let viewModel = AnaliticsViewModel()
 

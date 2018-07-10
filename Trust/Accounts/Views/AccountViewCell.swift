@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import TrustCore
 import UIKit
@@ -7,7 +7,7 @@ protocol AccountViewCellDelegate: class {
     func accountViewCell(_ cell: AccountViewCell, didTapInfoViewForAccount _: WalletInfo)
 }
 
-class AccountViewCell: UITableViewCell {
+final class AccountViewCell: UITableViewCell {
 
     @IBOutlet weak var infoButton: UIButton!
     @IBOutlet weak var activeView: UIView!

@@ -1,9 +1,9 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
 
-class TransactionsFooterView: UIView {
+final class ButtonsFooterView: UIView {
 
     lazy var sendButton: Button = {
         let sendButton = Button(size: .large, style: .squared)

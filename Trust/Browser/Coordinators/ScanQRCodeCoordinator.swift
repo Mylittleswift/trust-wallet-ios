@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import QRCodeReaderViewController
@@ -8,7 +8,7 @@ protocol ScanQRCodeCoordinatorDelegate: class {
     func didScan(result: String, in coordinator: ScanQRCodeCoordinator)
 }
 
-class ScanQRCodeCoordinator: NSObject, Coordinator {
+final class  ScanQRCodeCoordinator: NSObject, Coordinator {
     var coordinators: [Coordinator] = []
     weak var delegate: ScanQRCodeCoordinatorDelegate?
 

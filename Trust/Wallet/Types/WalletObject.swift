@@ -1,14 +1,15 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import RealmSwift
 import Realm
 
-class WalletObject: Object {
+final class WalletObject: Object {
 
     @objc dynamic var id: String = ""
     @objc dynamic var name: String = ""
     @objc dynamic var createdAt: Date = Date()
+    @objc dynamic var completedBackup: Bool = false
 
     override static func primaryKey() -> String? {
         return "id"

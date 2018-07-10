@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -10,7 +10,7 @@ protocol TokensViewModelDelegate: class {
     func refresh()
 }
 
-class TokensViewModel: NSObject {
+final class TokensViewModel: NSObject {
     let config: Config
 
     let store: TokensDataStore
@@ -18,6 +18,7 @@ class TokensViewModel: NSObject {
     let tokens: Results<TokenObject>
     var tokensObserver: NotificationToken?
     let address: Address
+    let transactionStore: TransactionsStorage
 
     var headerBalance: String {
         return amount ?? "0.00"
@@ -65,13 +66,15 @@ class TokensViewModel: NSObject {
         config: Config = Config(),
         address: Address,
         store: TokensDataStore,
-        tokensNetwork: NetworkProtocol
+        tokensNetwork: NetworkProtocol,
+        transactionStore: TransactionsStorage
     ) {
         self.config = config
         self.address = address
         self.store = store
         self.tokensNetwork = tokensNetwork
         self.tokens = store.tokens
+        self.transactionStore = transactionStore
         super.init()
     }
 
@@ -113,7 +116,7 @@ class TokensViewModel: NSObject {
 
     func cellViewModel(for path: IndexPath) -> TokenViewCellViewModel {
         let token = tokens[path.row]
-        return TokenViewCellViewModel(token: token, ticker: store.coinTicker(for: token))
+        return TokenViewCellViewModel(token: token, ticker: store.coinTicker(for: token), store: transactionStore)
     }
 
     func updateEthBalance() {
@@ -164,8 +167,22 @@ class TokensViewModel: NSObject {
         operationQueue.addOperations(balancesOperations, waitUntilFinished: false)
     }
 
+    func updatePendingTransactions() {
+        let transactions = transactionStore.pendingObjects
+        for transaction in transactions {
+            tokensNetwork.update(for: transaction) { result in
+                switch result {
+                case .success(let transaction, let state):
+                    self.transactionStore.update(state: state, for: transaction)
+                case .failure: break
+                }
+            }
+        }
+    }
+
     func fetch() {
         tokensInfo()
+        updatePendingTransactions()
     }
 
     func invalidateTokensObservation() {

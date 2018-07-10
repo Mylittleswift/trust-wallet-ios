@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -106,6 +106,7 @@ class AppCoordinator: NSObject, Coordinator {
         coordinators.removeAll()
         CookiesStore.delete()
         navigationController.dismiss(animated: true, completion: nil)
+        navigationController.viewControllers.removeAll()
         resetToWelcomeScreen()
     }
 

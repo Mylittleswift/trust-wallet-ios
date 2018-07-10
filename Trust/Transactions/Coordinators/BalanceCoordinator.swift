@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import APIKit
@@ -11,7 +11,7 @@ protocol BalanceCoordinatorDelegate: class {
     func didUpdate(viewModel: BalanceViewModel)
 }
 
-class BalanceCoordinator {
+final class BalanceCoordinator {
     let account: Wallet
     let storage: TokensDataStore
     let config: Config

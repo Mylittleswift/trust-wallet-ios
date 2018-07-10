@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
 import StatefulViewController
 
-class TransactionsEmptyView: UIView {
+final class TransactionsEmptyView: UIView {
 
     let titleLabel = UILabel()
     let imageView = UIImageView()

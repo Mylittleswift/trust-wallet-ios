@@ -1,9 +1,9 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import RandomColorSwift
 
-class NonFungibleCollectionViewCell: UICollectionViewCell {
+final class NonFungibleCollectionViewCell: UICollectionViewCell {
 
     @IBOutlet private weak var title: UILabel!
     @IBOutlet private weak var subTitle: UILabel!

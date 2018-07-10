@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -12,7 +12,7 @@ protocol AccountsCoordinatorDelegate: class {
     func didDeleteAccount(account: WalletInfo, in coordinator: AccountsCoordinator)
 }
 
-class AccountsCoordinator: Coordinator {
+final class AccountsCoordinator: Coordinator {
 
     let navigationController: NavigationController
     let keystore: Keystore
@@ -78,28 +78,28 @@ class AccountsCoordinator: Coordinator {
     }
 
     func exportMnemonic(for account: Account) {
-        navigationController.displayLoading()
+        navigationController.topViewController?.displayLoading()
         keystore.exportMnemonic(account: account) { [weak self] result in
-            self?.navigationController.hideLoading()
+            self?.navigationController.topViewController?.hideLoading()
             switch result {
             case .success(let words):
                 self?.exportMnemonicCoordinator(for: account, words: words)
             case .failure(let error):
-                self?.navigationController.displayError(error: error)
+                self?.navigationController.topViewController?.displayError(error: error)
             }
         }
     }
 
     func exportPrivateKeyView(for account: Account) {
-        navigationController.displayLoading()
+        navigationController.topViewController?.displayLoading()
         keystore.exportPrivateKey(account: account) { [weak self] result in
+            self?.navigationController.topViewController?.hideLoading()
             switch result {
             case .success(let privateKey):
                 self?.exportPrivateKey(with: privateKey)
             case .failure(let error):
-                self?.navigationController.displayError(error: error)
+                self?.navigationController.topViewController?.displayError(error: error)
             }
-            self?.navigationController.hideLoading()
         }
     }
 
@@ -109,10 +109,7 @@ class AccountsCoordinator: Coordinator {
             account: account,
             words: words
         )
-        coordinator.delegate = self
-        coordinator.start()
-        navigationController.present(coordinator.navigationController, animated: true, completion: nil)
-        addCoordinator(coordinator)
+        navigationController.pushCoordinator(coordinator: coordinator, animated: true)
     }
 
     func exportKeystore(for account: Account) {
@@ -127,13 +124,8 @@ class AccountsCoordinator: Coordinator {
     }
 
     func exportPrivateKey(with privateKey: Data) {
-        let coordinator = ExportPrivateKeyCoordinator(
-            privateKey: privateKey
-        )
-        coordinator.delegate = self
-        coordinator.start()
-        addCoordinator(coordinator)
-        navigationController.present(coordinator.navigationController, animated: true, completion: nil)
+        let coordinator = ExportPrivateKeyCoordinator(privateKey: privateKey)
+        navigationController.pushCoordinator(coordinator: coordinator, animated: true)
     }
 }
 
@@ -154,6 +146,7 @@ extension AccountsCoordinator: AccountsViewControllerDelegate {
 extension AccountsCoordinator: WalletCoordinatorDelegate {
     func didFinish(with account: WalletInfo, in coordinator: WalletCoordinator) {
         delegate?.didAddAccount(account: account, in: self)
+        accountsViewController.fetch()
         coordinator.navigationController.dismiss(animated: true, completion: nil)
         removeCoordinator(coordinator)
     }
@@ -179,20 +172,6 @@ extension AccountsCoordinator: BackupCoordinatorDelegate {
     }
 }
 
-extension AccountsCoordinator: ExportPhraseCoordinatorDelegate {
-    func didCancel(in coordinator: ExportPhraseCoordinator) {
-        coordinator.navigationController.dismiss(animated: true, completion: nil)
-        removeCoordinator(coordinator)
-    }
-}
-
-extension AccountsCoordinator: ExportPrivateKeyCoordinatorDelegate {
-    func didCancel(in coordinator: ExportPrivateKeyCoordinator) {
-        coordinator.navigationController.dismiss(animated: true, completion: nil)
-        removeCoordinator(coordinator)
-    }
-}
-
 extension AccountsCoordinator: WalletInfoViewControllerDelegate {
     func didPress(item: WalletInfoType, in controller: WalletInfoViewController) {
         switch item {
@@ -203,7 +182,7 @@ extension AccountsCoordinator: WalletInfoViewControllerDelegate {
         case .exportRecoveryPhrase(let account):
             exportMnemonic(for: account)
         case .copyAddress(let address):
-            UIPasteboard.general.string = address.description
+            controller.showShareActivity(from: controller.view, with: [address.description])
         }
     }
 

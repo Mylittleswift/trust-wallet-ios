@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
 import Moya
 
-class EditTokenViewModel {
+final class EditTokenViewModel {
 
     let network: NetworkProtocol
     let storage: TokensDataStore

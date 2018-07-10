@@ -1,9 +1,9 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import Eureka
 
-class TokenInfoViewController: FormViewController {
+final class TokenInfoViewController: FormViewController {
 
     let token: TokenObject
 

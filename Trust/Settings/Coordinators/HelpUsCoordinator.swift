@@ -1,9 +1,9 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 import Foundation
 import UIKit
 import StoreKit
 
-class HelpUsCoordinator: Coordinator {
+final class HelpUsCoordinator: Coordinator {
 
     let navigationController: NavigationController
     let appTracker: AppTracker

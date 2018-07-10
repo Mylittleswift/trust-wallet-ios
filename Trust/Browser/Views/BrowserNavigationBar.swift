@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
@@ -6,7 +6,7 @@ protocol BrowserNavigationBarDelegate: class {
     func did(action: BrowserNavigation)
 }
 
-class BrowserNavigationBar: UINavigationBar {
+final class BrowserNavigationBar: UINavigationBar {
 
     let textField = UITextField()
     let moreButton = UIButton()

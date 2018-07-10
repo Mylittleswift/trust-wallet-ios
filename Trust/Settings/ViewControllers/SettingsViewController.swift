@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import Eureka
@@ -9,7 +9,7 @@ protocol SettingsViewControllerDelegate: class {
     func didAction(action: SettingsAction, in viewController: SettingsViewController)
 }
 
-class SettingsViewController: FormViewController, Coordinator {
+final class SettingsViewController: FormViewController, Coordinator {
     var coordinators: [Coordinator] = []
 
     struct Values {

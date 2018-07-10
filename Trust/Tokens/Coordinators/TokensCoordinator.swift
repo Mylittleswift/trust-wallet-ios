@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -10,7 +10,7 @@ protocol TokensCoordinatorDelegate: class {
     func didPressDiscover(in coordinator: TokensCoordinator)
 }
 
-class TokensCoordinator: Coordinator {
+final class TokensCoordinator: Coordinator {
 
     let navigationController: NavigationController
     let session: WalletSession
@@ -21,7 +21,7 @@ class TokensCoordinator: Coordinator {
     let transactionsStore: TransactionsStorage
 
     lazy var tokensViewController: TokensViewController = {
-        let tokensViewModel = TokensViewModel(address: session.account.address, store: store, tokensNetwork: network)
+        let tokensViewModel = TokensViewModel(address: session.account.address, store: store, tokensNetwork: network, transactionStore: transactionsStore)
         let controller = TokensViewController(viewModel: tokensViewModel)
         controller.footerView.requestButton.addTarget(self, action: #selector(request), for: .touchUpInside)
         controller.footerView.sendButton.addTarget(self, action: #selector(send), for: .touchUpInside)
@@ -60,14 +60,6 @@ class TokensCoordinator: Coordinator {
         self.store = tokensStorage
         self.network = network
         self.transactionsStore = transactionsStore
-
-        NotificationCenter.default.addObserver(self, selector: #selector(self.showSpinningWheel(_:)), name: NSNotification.Name(rawValue: "ShowToken"), object: nil)
-    }
-
-    @objc func showSpinningWheel(_ notification: NSNotification) {
-        if let token = notification.userInfo?["token"] as? NonFungibleTokenObject, let backgroundColor =  notification.userInfo?["color"] as? UIColor {
-            didSelectToken(token, with: backgroundColor)
-        }
     }
 
     func start() {
@@ -112,8 +104,8 @@ class TokensCoordinator: Coordinator {
     }
 
     func tokenInfo(_ token: TokenObject) {
-        let controller = TokenInfoViewController(token: token)
-        navigationController.pushViewController(controller, animated: true)
+        let coordinator = TokenInfoCoordinator(token: token)
+        navigationController.pushCoordinator(coordinator: coordinator, animated: true)
     }
 
     @objc func dismiss() {
@@ -166,6 +158,7 @@ extension TokensCoordinator: TokensViewControllerDelegate {
             viewModel: TokenViewModel(token: token, store: store, transactionsStore: transactionsStore, tokensNetwork: network, session: session)
         )
         controller.delegate = self
+        controller.navigationItem.backBarButtonItem = .back
         navigationController.pushViewController(controller, animated: true)
     }
 
@@ -197,6 +190,10 @@ extension TokensCoordinator: NewTokenViewControllerDelegate {
 extension TokensCoordinator: NonFungibleTokensViewControllerDelegate {
     func didPressDiscover() {
         delegate?.didPressDiscover(in: self)
+    }
+
+    func didPress(token: NonFungibleTokenObject, with bacground: UIColor) {
+        didSelectToken(token, with: bacground)
     }
 }
 

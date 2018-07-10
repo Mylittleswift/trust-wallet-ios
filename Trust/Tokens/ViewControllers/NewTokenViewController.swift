@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import Eureka
@@ -10,7 +10,7 @@ protocol NewTokenViewControllerDelegate: class {
     func didAddToken(token: ERC20Token, in viewController: NewTokenViewController)
 }
 
-class NewTokenViewController: FormViewController {
+final class NewTokenViewController: FormViewController {
 
     private var viewModel: NewTokenViewModel
 

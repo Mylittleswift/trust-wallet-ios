@@ -1,6 +1,18 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
+
+struct FormSection {
+    let footer: String?
+    let header: String?
+    let rows: [WalletInfoType]
+
+    init(footer: String? = .none, header: String? = .none, rows: [WalletInfoType]) {
+        self.footer = footer
+        self.header = header
+        self.rows = rows
+    }
+}
 
 struct WalletInfoViewModel {
 
@@ -20,24 +32,47 @@ struct WalletInfoViewModel {
         return R.string.localizable.name()
     }
 
-    var types: [WalletInfoType] {
+    var sections: [FormSection] {
         switch wallet.wallet.type {
         case .privateKey(let account):
             return [
-                .exportKeystore(account),
-                .exportPrivateKey(account),
-                .copyAddress(account.address),
+                FormSection(
+                    rows: [
+                        .exportKeystore(account),
+                        .exportPrivateKey(account),
+                    ]
+                ),
+                FormSection(
+                    footer: wallet.address.description,
+                    rows: [
+                        .copyAddress(account.address),
+                    ]
+                ),
             ]
         case .hd(let account):
             return [
-                .exportRecoveryPhrase(account),
-                .exportPrivateKey(account),
-                .exportKeystore(account),
-                .copyAddress(account.address),
+                FormSection(
+                    rows: [
+                        .exportRecoveryPhrase(account),
+                        .exportKeystore(account),
+                        .exportPrivateKey(account),
+                    ]
+                ),
+                FormSection(
+                    footer: wallet.address.description,
+                    rows: [
+                        .copyAddress(account.address),
+                    ]
+                ),
             ]
         case .address(let address):
             return [
-                .copyAddress(address),
+                FormSection(
+                    footer: wallet.address.description,
+                    rows: [
+                        .copyAddress(address),
+                    ]
+                ),
             ]
         }
     }

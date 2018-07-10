@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -10,7 +10,7 @@ protocol WalletCoordinatorDelegate: class {
     func didCancel(in coordinator: WalletCoordinator)
 }
 
-class WalletCoordinator: Coordinator {
+final class WalletCoordinator: Coordinator {
 
     let navigationController: NavigationController
     weak var delegate: WalletCoordinatorDelegate?
@@ -53,13 +53,13 @@ class WalletCoordinator: Coordinator {
 
     func createInstantWallet() {
         let text = String(format: NSLocalizedString("Creating wallet %@", value: "Creating wallet %@", comment: ""), "...")
-        navigationController.displayLoading(text: text, animated: false)
+        navigationController.topViewController?.displayLoading(text: text, animated: false)
         let password = PasswordGenerator.generateRandom()
         keystore.createAccount(with: password) { result in
             switch result {
             case .success(let account):
                 self.keystore.exportMnemonic(account: account) { mnemonicResult in
-                    self.navigationController.hideLoading(animated: false)
+                    self.navigationController.topViewController?.hideLoading(animated: false)
                     switch mnemonicResult {
                     case .success(let words):
                         self.pushBackup(for: account, words: words)
@@ -68,8 +68,8 @@ class WalletCoordinator: Coordinator {
                     }
                 }
             case .failure(let error):
-                self.navigationController.hideLoading(animated: false)
-                self.navigationController.displayError(error: error)
+                self.navigationController.topViewController?.hideLoading(animated: false)
+                self.navigationController.topViewController?.displayError(error: error)
             }
         }
     }
@@ -107,17 +107,6 @@ class WalletCoordinator: Coordinator {
         delegate?.didFinish(with: account, in: self)
     }
 
-    func backup(account: Account) {
-        let coordinator = BackupCoordinator(
-            navigationController: navigationController,
-            keystore: keystore,
-            account: account
-        )
-        coordinator.delegate = self
-        addCoordinator(coordinator)
-        coordinator.start()
-    }
-
     func verify(account: Account, words: [String]) {
         let controller = DarkVerifyPassphraseViewController(account: account, words: words)
         controller.delegate = self
@@ -128,20 +117,20 @@ class WalletCoordinator: Coordinator {
     func walletCreated(wallet: WalletInfo) {
         let controller = WalletCreatedController(wallet: wallet)
         controller.delegate = self
+        controller.navigationItem.backBarButtonItem = nil
+        controller.navigationItem.leftBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: self, action: nil)
         navigationController.setNavigationBarHidden(false, animated: true)
         navigationController.pushViewController(controller, animated: true)
     }
 
-    private func shareMnemonic(in sender: UIView, words: [String]) {
-        let copyValue = words.joined(separator: " ")
-        navigationController.showShareActivity(from: sender, with: [copyValue])
-    }
-
-    func showConfirm(for account: Account) {
+    func showConfirm(for account: Account, completedBackup: Bool) {
         let w = Wallet(type: .hd(account))
         let wallet = WalletInfo(wallet: w, info: WalletObject.from(w))
-        let initialName = WalletInfo.initialName(index: keystore.wallets.count)
-        keystore.store(object: wallet.info, fields: [.name(initialName)])
+        let initialName = WalletInfo.initialName(index: keystore.wallets.count - 1)
+        keystore.store(object: wallet.info, fields: [
+            .name(initialName),
+            .backup(completedBackup),
+        ])
         walletCreated(wallet: wallet)
     }
 
@@ -160,16 +149,10 @@ extension WalletCoordinator: WelcomeViewControllerDelegate {
     }
 }
 
-extension WalletCoordinator: ImportWalletViewControllerDelegate {    
+extension WalletCoordinator: ImportWalletViewControllerDelegate {
     func didImportAccount(account: WalletInfo, fields: [WalletInfoField], in viewController: ImportWalletViewController) {
         keystore.store(object: account.info, fields: fields)
         didCreateAccount(account: account)
-    }
-}
-
-extension WalletCoordinator: BackupViewControllerDelegate {
-    func didPressBackup(account: Account, in viewController: BackupViewController) {
-        backup(account: account)
     }
 }
 
@@ -178,50 +161,26 @@ extension WalletCoordinator: PassphraseViewControllerDelegate {
         // show verify
         verify(account: account, words: words)
     }
-
-    func didFinish(in controller: PassphraseViewController, with account: Account) {
-        let wallet = Wallet(type: .hd(account))
-        didCreateAccount(account: WalletInfo(wallet: wallet))
-    }
-
-    func didPressShare(in controller: PassphraseViewController, sender: UIView, account: Account, words: [String]) {
-        shareMnemonic(in: sender, words: words)
-    }
 }
 
 extension WalletCoordinator: VerifyPassphraseViewControllerDelegate {
     func didFinish(in controller: VerifyPassphraseViewController, with account: Account) {
-        showConfirm(for: account)
+        showConfirm(for: account, completedBackup: true)
     }
 
     func didSkip(in controller: VerifyPassphraseViewController, with account: Account) {
         controller.confirm(
             title: NSLocalizedString("verifyPassphrase.skip.confirm.title", value: "Are you sure you want to skip this step?", comment: ""),
             message: NSLocalizedString("verifyPassphrase.skip.confirm.message", value: "Loss of backup phrase can put your wallet at risk!", comment: ""),
-            okTitle: NSLocalizedString("Skip", value: "Skip", comment: ""),
+            okTitle: R.string.localizable.skip(),
             okStyle: .destructive
         ) { [weak self] result in
             switch result {
-            case .success: self?.showConfirm(for: account)
+            case .success:
+                self?.showConfirm(for: account, completedBackup: false)
             case .failure: break
             }
         }
-    }
-
-    func didPressShare(in controller: VerifyPassphraseViewController, sender: UIView, account: Account, words: [String]) {
-        shareMnemonic(in: sender, words: words)
-    }
-}
-
-extension WalletCoordinator: BackupCoordinatorDelegate {
-    func didCancel(coordinator: BackupCoordinator) {
-        removeCoordinator(coordinator)
-    }
-
-    func didFinish(wallet: Wallet, in coordinator: BackupCoordinator) {
-        removeCoordinator(coordinator)
-        // TODO
-        //didCreateAccount(account: wallet)
     }
 }
 

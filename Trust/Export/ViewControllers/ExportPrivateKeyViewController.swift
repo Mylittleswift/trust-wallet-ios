@@ -1,11 +1,11 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustCore
 import UIKit
 import MBProgressHUD
 
-class ExportPrivateKeyViewConroller: UIViewController {
+final class ExportPrivateKeyViewConroller: UIViewController {
 
     private struct Layout {
         static var widthAndHeight: CGFloat = 260

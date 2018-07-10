@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -21,7 +21,7 @@ protocol BrowserViewControllerDelegate: class {
     func didVisitURL(url: URL, title: String)
 }
 
-class BrowserViewController: UIViewController {
+final class BrowserViewController: UIViewController {
 
     private var myContext = 0
     let account: Wallet

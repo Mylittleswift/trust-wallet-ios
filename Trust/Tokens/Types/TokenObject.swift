@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import RealmSwift
@@ -10,7 +10,7 @@ struct TokenObjectList: Decodable {
     let contract: TokenObject
 }
 
-class TokenObject: Object, Decodable {
+final class TokenObject: Object, Decodable {
     static let DEFAULT_BALANCE = 0.00
 
     @objc dynamic var contract: String = ""

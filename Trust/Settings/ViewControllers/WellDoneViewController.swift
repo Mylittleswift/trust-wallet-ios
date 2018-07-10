@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 import UIKit
 
 enum WellDoneAction {
@@ -9,7 +9,7 @@ protocol WellDoneViewControllerDelegate: class {
     func didPress(action: WellDoneAction, sender: UIView, in viewController: WellDoneViewController)
 }
 
-class WellDoneViewController: UIViewController {
+final class WellDoneViewController: UIViewController {
 
     weak var delegate: WellDoneViewControllerDelegate?
 

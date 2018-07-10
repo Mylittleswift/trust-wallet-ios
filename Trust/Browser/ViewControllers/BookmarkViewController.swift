@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -8,7 +8,7 @@ protocol BookmarkViewControllerDelegate: class {
     func didSelectBookmark(_ bookmark: Bookmark, in viewController: BookmarkViewController)
 }
 
-class BookmarkViewController: UIViewController {
+final class BookmarkViewController: UIViewController {
 
     let tableView = UITableView(frame: .zero, style: .plain)
 

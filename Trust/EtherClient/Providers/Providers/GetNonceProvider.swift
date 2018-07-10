@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import JSONRPCKit
@@ -6,7 +6,7 @@ import APIKit
 import BigInt
 import Result
 
-class GetNonceProvider: NonceProvider {
+final class GetNonceProvider: NonceProvider {
     let storage: TransactionsStorage
     var remoteNonce: BigInt? = .none
     var latestNonce: BigInt? {

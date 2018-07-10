@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import RealmSwift
 import TrustCore
 import PromiseKit
 
-class NonFungibleTokenViewModel {
+final class NonFungibleTokenViewModel {
 
     let config: Config
     let storage: TokensDataStore

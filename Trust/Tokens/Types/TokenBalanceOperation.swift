@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import TrustCore
 
-class TokenBalanceOperation: TrustOperation {
+final class TokenBalanceOperation: TrustOperation {
     private var network: NetworkProtocol
     private let address: Address
     private let store: TokensDataStore

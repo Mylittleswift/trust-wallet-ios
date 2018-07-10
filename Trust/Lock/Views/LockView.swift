@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-class LockView: UIView {
+final class LockView: UIView {
     var characterView = UIStackView()
     var lockTitle = UILabel()
     var model: LockViewModel!

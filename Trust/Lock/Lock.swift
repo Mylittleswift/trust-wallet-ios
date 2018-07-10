@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import SAMKeychain
@@ -9,7 +9,7 @@ protocol LockInterface {
     func shouldShowProtection() -> Bool
 }
 
-class Lock: LockInterface {
+final class Lock: LockInterface {
 
     private struct Keys {
         static let service = "trust.lock"

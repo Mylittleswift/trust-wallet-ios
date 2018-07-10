@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -11,7 +11,7 @@ protocol LocalSchemeCoordinatorDelegate: class {
     func didCancel(in coordinator: LocalSchemeCoordinator)
 }
 
-class LocalSchemeCoordinator: Coordinator {
+final class LocalSchemeCoordinator: Coordinator {
 
     let navigationController: NavigationController
     let keystore: Keystore
@@ -66,7 +66,6 @@ class LocalSchemeCoordinator: Coordinator {
             forceFetchNonce: true
         )
         let coordinator = ConfirmCoordinator(
-            navigationController: NavigationController(),
             session: session,
             configurator: configurator,
             keystore: keystore,

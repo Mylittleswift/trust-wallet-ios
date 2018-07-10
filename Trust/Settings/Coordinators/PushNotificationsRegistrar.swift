@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UserNotifications
@@ -6,7 +6,7 @@ import UIKit
 import Moya
 import TrustCore
 
-class PushNotificationsRegistrar {
+final class PushNotificationsRegistrar {
 
     private let trustProvider = TrustProviderFactory.makeProvider()
     let config = Config()

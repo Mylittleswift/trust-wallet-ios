@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -10,13 +10,16 @@ struct TokenViewCellViewModel {
 
     let token: TokenObject
     let ticker: CoinTicker?
+    let store: TransactionsStorage
 
     init(
         token: TokenObject,
-        ticker: CoinTicker?
+        ticker: CoinTicker?,
+        store: TransactionsStorage
     ) {
         self.token = token
         self.ticker = ticker
+        self.store = store
     }
 
     var title: String {

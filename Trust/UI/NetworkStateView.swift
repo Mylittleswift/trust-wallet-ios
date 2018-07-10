@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
@@ -11,7 +11,7 @@ enum NetworkCondition {
     }
 }
 
-class NetworkStateView: UIView {
+final class NetworkStateView: UIView {
     var viewModel: NetworkConditionViewModel? = nil {
         didSet {
             guard let viewModel = viewModel else { return }

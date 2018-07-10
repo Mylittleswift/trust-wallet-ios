@@ -1,7 +1,7 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 import Foundation
 
-class AppTracker {
+final class AppTracker {
 
     struct Keys {
         static let launchCountTotal = "launchCountTotal"

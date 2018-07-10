@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import TrustCore
 import UIKit
@@ -10,7 +10,7 @@ protocol AccountsViewControllerDelegate: class {
     func didSelectInfoForAccount(account: WalletInfo, sender: UIView, in viewController: AccountsViewController)
 }
 
-class AccountsViewController: UITableViewController {
+final class AccountsViewController: UITableViewController {
     weak var delegate: AccountsViewControllerDelegate?
     var viewModel: AccountsViewModel {
         return AccountsViewModel(

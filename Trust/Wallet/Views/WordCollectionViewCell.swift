@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-class WordCollectionViewCell: UICollectionViewCell {
+final class WordCollectionViewCell: UICollectionViewCell {
 
     @IBOutlet weak var wordLabel: UILabel!
 

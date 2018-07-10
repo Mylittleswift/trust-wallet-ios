@@ -1,9 +1,9 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import LocalAuthentication
 
-class LockEnterPasscodeViewController: LockPasscodeViewController {
+final class LockEnterPasscodeViewController: LockPasscodeViewController {
     private lazy var lockEnterPasscodeViewModel: LockEnterPasscodeViewModel = {
         return self.model as! LockEnterPasscodeViewModel
     }()

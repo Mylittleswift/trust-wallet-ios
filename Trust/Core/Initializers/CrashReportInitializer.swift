@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import Fabric
 import Crashlytics
 
-class CrashReportInitializer: NSObject, Initializer {
+final class CrashReportInitializer: NSObject, Initializer {
 
     func perform() {
         guard !isDebug else { return }

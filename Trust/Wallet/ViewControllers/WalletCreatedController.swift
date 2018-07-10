@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -7,7 +7,7 @@ protocol WalletCreatedControllerDelegate: class {
     func didPressDone(wallet: WalletInfo, in controller: WalletCreatedController)
 }
 
-class WalletCreatedController: UIViewController {
+final class WalletCreatedController: UIViewController {
 
     weak var delegate: WalletCreatedControllerDelegate?
     let wallet: WalletInfo
@@ -64,7 +64,7 @@ class WalletCreatedController: UIViewController {
         ])
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
-        stackView.spacing = 12
+        stackView.spacing = 15
         stackView.backgroundColor = .clear
 
         view.addSubview(stackView)

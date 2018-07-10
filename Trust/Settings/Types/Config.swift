@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 
@@ -13,7 +13,7 @@ struct Config {
         static let testNetworkWarningOff = "testNetworkWarningOff"
     }
 
-    static let dbMigrationSchemaVersion: UInt64 = 56
+    static let dbMigrationSchemaVersion: UInt64 = 57
 
     static let current: Config = Config()
 

@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import RealmSwift
 import TrustCore
 
-class Transaction: Object, Decodable {
+final class Transaction: Object, Decodable {
     @objc dynamic var id: String = ""
     @objc dynamic var uniqueID: String = ""
     @objc dynamic var blockNumber: Int = 0

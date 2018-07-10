@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustCore
@@ -8,7 +8,7 @@ enum RefreshType {
     case ethBalance
 }
 
-class WalletSession {
+final class WalletSession {
     let account: WalletInfo
     let balanceCoordinator: BalanceCoordinator
     let config: Config

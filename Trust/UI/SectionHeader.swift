@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-class SectionHeader: UIView {
+final class SectionHeader: UIView {
 
     private var fillColor: UIColor
     private var borderColor: UIColor

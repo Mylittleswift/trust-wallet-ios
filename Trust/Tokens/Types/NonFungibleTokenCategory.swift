@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import RealmSwift
 import Realm
 import Foundation
 
-class NonFungibleTokenCategory: Object, Decodable {
+final class NonFungibleTokenCategory: Object, Decodable {
     @objc dynamic var name: String = ""
     var items = List<NonFungibleTokenObject>()
 

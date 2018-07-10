@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import TrustKeystore
@@ -8,7 +8,7 @@ protocol BackupViewControllerDelegate: class {
     func didPressBackup(account: Account, in viewController: BackupViewController)
 }
 
-class BackupViewController: UIViewController {
+final class BackupViewController: UIViewController {
 
     let account: Account
     weak var delegate: BackupViewControllerDelegate?

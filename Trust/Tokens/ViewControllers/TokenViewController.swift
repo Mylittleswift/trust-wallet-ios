@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import StatefulViewController
@@ -10,7 +10,7 @@ protocol TokenViewControllerDelegate: class {
     func didPress(transaction: Transaction, in controller: UIViewController)
 }
 
-class TokenViewController: UIViewController {
+final class TokenViewController: UIViewController {
 
     private let refreshControl = UIRefreshControl()
 
@@ -35,7 +35,7 @@ class TokenViewController: UIViewController {
 
         navigationItem.title = viewModel.title
         view.backgroundColor = .white
-
+        tableView.tableFooterView = UIView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.dataSource = self
         tableView.delegate = self

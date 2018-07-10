@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -10,7 +10,7 @@ protocol NFTokenViewControllerDelegate: class {
     func didPressLink(url: URL, in viewController: NFTokenViewController)
 }
 
-class NFTokenViewController: UIViewController {
+final class NFTokenViewController: UIViewController {
 
     lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()

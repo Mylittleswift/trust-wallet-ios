@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import Kingfisher
@@ -7,7 +7,7 @@ protocol EditTokenTableViewCellDelegate: class {
     func didChangeState(state: Bool, in cell: EditTokenTableViewCell)
 }
 
-class EditTokenTableViewCell: UITableViewCell {
+final class EditTokenTableViewCell: UITableViewCell {
 
     @IBOutlet weak var tokenImageView: TokenImageView!
     @IBOutlet weak var tokenLabel: UILabel!

@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -16,7 +16,7 @@ protocol SignMessageCoordinatorDelegate: class {
     func didCancel(in coordinator: SignMessageCoordinator)
 }
 
-class SignMessageCoordinator: Coordinator {
+final class SignMessageCoordinator: Coordinator {
 
     var coordinators: [Coordinator] = []
 

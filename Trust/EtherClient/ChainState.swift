@@ -1,11 +1,11 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import JSONRPCKit
 import APIKit
 import BigInt
 
-class ChainState {
+final class ChainState {
 
     struct Keys {
         static let latestBlock = "chainID"

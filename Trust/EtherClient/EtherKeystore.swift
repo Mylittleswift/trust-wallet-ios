@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import BigInt
 import Foundation
@@ -12,7 +12,7 @@ enum EtherKeystoreError: LocalizedError {
     case protectionDisabled
 }
 
-open class EtherKeystore: Keystore {
+class EtherKeystore: Keystore {
     struct Keys {
         static let recentlyUsedAddress: String = "recentlyUsedAddress"
         static let recentlyUsedWallet: String = "recentlyUsedWallet"
@@ -430,6 +430,8 @@ open class EtherKeystore: Keystore {
                 switch field {
                 case .name(let name):
                     object.name = name
+                case .backup(let completedBackup):
+                    object.completedBackup = completedBackup
                 }
             }
             storage.realm.add(object, update: true)

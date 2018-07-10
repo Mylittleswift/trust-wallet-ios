@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import Eureka
@@ -9,7 +9,7 @@ protocol ImportWalletViewControllerDelegate: class {
     func didImportAccount(account: WalletInfo, fields: [WalletInfoField], in viewController: ImportWalletViewController)
 }
 
-class ImportWalletViewController: FormViewController {
+final class ImportWalletViewController: FormViewController {
 
     let keystore: Keystore
     private let viewModel = ImportWalletViewModel()
@@ -307,10 +307,10 @@ extension WalletInfo {
     }
 
     static func initialName(index numberOfWallets: Int) -> String {
-        return String(format: NSLocalizedString(
-            "importWallet.initialNmae", value: "%@ %@ %@", comment: ""
-        ),
-            "ETH", R.string.localizable.wallet(), "\(numberOfWallets + 1)"
+        if numberOfWallets == 0 {
+            return R.string.localizable.mainWallet()
+        }
+        return String(format: "%@ %@", R.string.localizable.wallet(), "\(numberOfWallets + 1)"
         )
     }
 }

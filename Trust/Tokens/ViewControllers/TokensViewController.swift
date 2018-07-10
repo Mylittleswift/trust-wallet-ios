@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -15,7 +15,7 @@ protocol TokensViewControllerDelegate: class {
     func didDisable(token: TokenObject, in viewController: UIViewController)
 }
 
-class TokensViewController: UIViewController {
+final class TokensViewController: UIViewController {
 
     fileprivate var viewModel: TokensViewModel
 
@@ -41,8 +41,8 @@ class TokensViewController: UIViewController {
         return footer
     }()
 
-    lazy var footerView: TransactionsFooterView = {
-        let footerView = TransactionsFooterView(
+    lazy var footerView: ButtonsFooterView = {
+        let footerView = ButtonsFooterView(
             frame: .zero
         )
         footerView.translatesAutoresizingMaskIntoConstraints = false
@@ -171,7 +171,10 @@ class TokensViewController: UIViewController {
 
     private func sheduleBalanceUpdate() {
         guard etherFetchTimer == nil else { return }
-        etherFetchTimer = Timer.scheduledTimer(timeInterval: intervalToETHRefresh, target: BlockOperation { [weak self] in self?.viewModel.updateEthBalance() }, selector: #selector(Operation.main), userInfo: nil, repeats: true)
+        etherFetchTimer = Timer.scheduledTimer(timeInterval: intervalToETHRefresh, target: BlockOperation { [weak self] in
+            self?.viewModel.updateEthBalance()
+            self?.viewModel.updatePendingTransactions()
+        }, selector: #selector(Operation.main), userInfo: nil, repeats: true)
     }
 
     private func stopTokenObservation() {

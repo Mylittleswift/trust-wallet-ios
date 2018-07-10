@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import XCTest
 @testable import Trust
@@ -68,7 +68,7 @@ class AppCoordinatorTests: XCTestCase {
         coordinator.start()
         coordinator.showInitialWalletCoordinator(entryPoint: .importWallet)
 
-        XCTAssertTrue((coordinator.navigationController.presentedViewController as? UINavigationController)?.viewControllers[0] is ImportWalletViewController)
+        XCTAssertTrue((coordinator.navigationController.presentedViewController as? NavigationController)?.viewControllers[0] is ImportWalletViewController)
     }
 
     func testShowTransactions() {

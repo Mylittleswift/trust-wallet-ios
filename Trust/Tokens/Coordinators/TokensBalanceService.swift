@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import BigInt
@@ -7,7 +7,7 @@ import APIKit
 import Result
 import TrustCore
 
-class TokensBalanceService {
+public class TokensBalanceService {
 
     func getBalance(
         for address: Address,

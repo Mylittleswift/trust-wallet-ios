@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-class TransactionViewCell: UITableViewCell {
+final class TransactionViewCell: UITableViewCell {
 
     static let identifier = "TransactionTableViewCell"
 

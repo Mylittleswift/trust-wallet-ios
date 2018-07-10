@@ -1,8 +1,8 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 
-class DynamicCollectionView: UICollectionView {
+final class DynamicCollectionView: UICollectionView {
     override func layoutSubviews() {
         super.layoutSubviews()
         if !__CGSizeEqualToSize(bounds.size, self.intrinsicContentSize) {

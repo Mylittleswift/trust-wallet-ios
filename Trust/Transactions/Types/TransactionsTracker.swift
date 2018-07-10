@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 
@@ -12,7 +12,7 @@ enum TransactionFetchingState: Int {
     }
 }
 
-class TransactionsTracker {
+final class TransactionsTracker {
     private var fetchingStateKey: String {
         return "transactions.fetchingState-\(sessionID)"
     }

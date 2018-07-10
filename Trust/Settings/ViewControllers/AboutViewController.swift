@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 
@@ -10,7 +10,7 @@ protocol AboutViewControllerDelegate: class {
     func didPressURL(_ url: URL, in controller: AboutViewController)
 }
 
-class AboutViewController: FormViewController {
+final class AboutViewController: FormViewController {
 
     let viewModel = AboutViewModel()
     weak var delegate: AboutViewControllerDelegate?

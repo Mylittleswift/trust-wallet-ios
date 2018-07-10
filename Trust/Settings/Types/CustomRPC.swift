@@ -1,9 +1,9 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import RealmSwift
 
-class CustomRPC: Object {
+final class CustomRPC: Object {
     @objc dynamic var chainID: Int = 0
     @objc dynamic var name: String = ""
     @objc dynamic var symbol: String = ""

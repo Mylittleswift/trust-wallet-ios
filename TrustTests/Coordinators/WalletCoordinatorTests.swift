@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import XCTest
 @testable import Trust
@@ -39,7 +39,7 @@ class WalletCoordinatorTests: XCTestCase {
 
         coordinator.pushBackup(for: .make(), words: [])
 
-        XCTAssertTrue(coordinator.navigationController.viewControllers[0] is PassphraseViewController)
+        XCTAssertTrue(coordinator.navigationController.viewControllers.last is PassphraseViewController)
     }
 
     func testPushImportWallet() {

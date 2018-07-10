@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import UIKit
@@ -18,7 +18,7 @@ enum BookmarksViewType: Int {
     case history
 }
 
-class MasterBrowserViewController: UIViewController {
+final class MasterBrowserViewController: UIViewController {
 
     private lazy var segmentController: UISegmentedControl = {
         let items = [

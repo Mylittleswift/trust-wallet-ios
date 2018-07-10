@@ -1,4 +1,4 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import UIKit
 import Eureka
@@ -13,7 +13,7 @@ enum NotificationChanged {
     case preferences(Preferences)
 }
 
-class NotificationsViewController: FormViewController {
+final class NotificationsViewController: FormViewController {
 
     private let viewModel = NotificationsViewModel()
     private let preferencesController: PreferencesController

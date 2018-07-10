@@ -1,10 +1,10 @@
-// Copyright SIX DAY LLC. All rights reserved.
+// Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
 import RealmSwift
 import TrustCore
 
-class MigrationInitializer: Initializer {
+final class MigrationInitializer: Initializer {
 
     let account: Wallet
     let chainID: Int

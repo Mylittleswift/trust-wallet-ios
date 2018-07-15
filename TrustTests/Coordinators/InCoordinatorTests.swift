@@ -22,13 +22,13 @@ class InCoordinatorTests: XCTestCase {
         XCTAssertNotNil(tabbarController)
 
         XCTAssert((tabbarController?.viewControllers?[0] as? UINavigationController)?.viewControllers[0] is MasterBrowserViewController)
-        XCTAssert((tabbarController?.viewControllers?[1] as? UINavigationController)?.viewControllers[0] is WalletViewController)
+        XCTAssert((tabbarController?.viewControllers?[1] as? UINavigationController)?.viewControllers[0] is TokensViewController)
         XCTAssert((tabbarController?.viewControllers?[2] as? UINavigationController)?.viewControllers[0] is SettingsViewController)
     }
 
     func testChangeRecentlyUsedAccount() {
-        let account1: Trust.WalletInfo = WalletInfo(wallet: .make(type: .address(Address(string: "0x1000000000000000000000000000000000000000")!)))
-        let account2: Trust.WalletInfo = WalletInfo(wallet: .make(type: .address(Address(string: "0x2000000000000000000000000000000000000000")!)))
+        let account1: Trust.WalletInfo = WalletInfo(wallet: .make(type: .address(EthereumAddress(string: "0x1000000000000000000000000000000000000000")!)))
+        let account2: Trust.WalletInfo = WalletInfo(wallet: .make(type: .address(EthereumAddress(string: "0x2000000000000000000000000000000000000000")!)))
 
         let keystore = FakeKeystore(
             wallets: [
@@ -97,6 +97,6 @@ class InCoordinatorTests: XCTestCase {
 
         let viewController = (coordinator.tabBarController?.selectedViewController as? UINavigationController)?.viewControllers[0]
 
-        XCTAssert(viewController is WalletViewController)
+        XCTAssert(viewController is TokensViewController)
     }
 }

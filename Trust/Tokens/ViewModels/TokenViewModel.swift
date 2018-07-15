@@ -49,22 +49,6 @@ final class TokenViewModel {
         return .white
     }()
 
-    let headerBackgroundColor: UIColor = {
-        return UIColor(hex: "fafafa")
-    }()
-
-    let headerTitleTextColor: UIColor = {
-        return UIColor(hex: "555357")
-    }()
-
-    let headerTitleFont: UIFont = {
-        return UIFont.systemFont(ofSize: 14, weight: UIFont.Weight.medium)
-    }()
-
-    let headerBorderColor: UIColor = {
-        return UIColor(hex: "e1e1e1")
-    }()
-
     var amount: String {
         return String(
             format: "%@ %@",
@@ -209,18 +193,8 @@ final class TokenViewModel {
         return stringDate
     }
 
-    func hederView(for section: Int) -> UIView {
-        return SectionHeader(
-            fillColor: headerBackgroundColor,
-            borderColor: headerBorderColor,
-            title: titleForHeader(in: section),
-            textColor: headerTitleTextColor,
-            textFont: headerTitleFont
-        )
-    }
-
     func cellViewModel(for indexPath: IndexPath) -> TransactionCellViewModel {
-        return TransactionCellViewModel(transaction: tokenTransactionSections[indexPath.section].items[indexPath.row], config: config, chainState: session.chainState, currentWallet: session.account.wallet)
+        return TransactionCellViewModel(transaction: tokenTransactionSections[indexPath.section].items[indexPath.row], config: config, chainState: session.chainState, currentWallet: session.account)
     }
 
     func hasContent() -> Bool {
@@ -237,7 +211,12 @@ final class TokenViewModel {
     }
 
     private func fetchTransactions() {
-        tokensNetwork.transactions(for: session.account.address, startBlock: 1, page: 0, contract: token.contract) { result in
+        let contract: String? = {
+            guard TokensDataStore.etherToken() != token else { return .none }
+            return token.contract
+        }()
+
+        tokensNetwork.transactions(for: session.account.address, startBlock: 1, page: 0, contract: contract) { result in
             guard let transactions = result.0 else { return }
             self.transactionsStore.add(transactions)
         }

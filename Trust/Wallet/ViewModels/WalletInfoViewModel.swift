@@ -38,14 +38,14 @@ struct WalletInfoViewModel {
             return [
                 FormSection(
                     rows: [
-                        .exportKeystore(account),
-                        .exportPrivateKey(account),
+                        .exportKeystore(wallet.wallet.account!),
+                        .exportPrivateKey(wallet.wallet.account!),
                     ]
                 ),
                 FormSection(
                     footer: wallet.address.description,
                     rows: [
-                        .copyAddress(account.address),
+                        .copyAddress(wallet.address),
                     ]
                 ),
             ]
@@ -54,14 +54,14 @@ struct WalletInfoViewModel {
                 FormSection(
                     rows: [
                         .exportRecoveryPhrase(account),
-                        .exportKeystore(account),
-                        .exportPrivateKey(account),
+                        //.exportKeystore(account),
+                        .exportPrivateKey(wallet.wallet.account!),
                     ]
                 ),
                 FormSection(
                     footer: wallet.address.description,
                     rows: [
-                        .copyAddress(account.address),
+                        .copyAddress(wallet.address),
                     ]
                 ),
             ]

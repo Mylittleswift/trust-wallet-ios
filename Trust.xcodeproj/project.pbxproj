@@ -158,6 +158,12 @@
 		29A13E331F6B1B7A00E432A2 /* Styles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A13E321F6B1B7A00E432A2 /* Styles.swift */; };
 		29AD3D4720EC443D007893C9 /* WalletCreatedController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D4620EC443D007893C9 /* WalletCreatedController.swift */; };
 		29AD3D4F20F2CEEE007893C9 /* SnapshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D4E20F2CEEE007893C9 /* SnapshotHelper.swift */; };
+		29AD3D5120F5B9F9007893C9 /* WalletsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D5020F5B9F9007893C9 /* WalletsViewController.swift */; };
+		29AD3D5420F5BA2E007893C9 /* WalletTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D5220F5BA2E007893C9 /* WalletTableViewCell.swift */; };
+		29AD3D5520F5BA2E007893C9 /* WalletTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 29AD3D5320F5BA2E007893C9 /* WalletTableViewCell.xib */; };
+		29AD3D5720F5BB08007893C9 /* WalletsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D5620F5BB08007893C9 /* WalletsViewModel.swift */; };
+		29AD3D5920F5BD97007893C9 /* WalletsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D5820F5BD97007893C9 /* WalletsCoordinator.swift */; };
+		29AD3D5C20F6D2E3007893C9 /* WalletTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD3D5B20F6D2E3007893C9 /* WalletTitleView.swift */; };
 		29AD8A041F93D6CD008E10E7 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD8A031F93D6CD008E10E7 /* Constants.swift */; };
 		29AD8A061F93DC8C008E10E7 /* PushDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD8A051F93DC8C008E10E7 /* PushDevice.swift */; };
 		29AD8A091F93F8B2008E10E7 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD8A081F93F8B2008E10E7 /* Session.swift */; };
@@ -301,7 +307,6 @@
 		73ACEF0120163ED4003DD71D /* LockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73ACEF0020163ED4003DD71D /* LockViewModel.swift */; };
 		73ACEF0520163F46003DD71D /* LockEnterPasscodeCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73ACEF0420163F46003DD71D /* LockEnterPasscodeCoordinator.swift */; };
 		73B1A6B6204B4789001F546C /* NonFungibleTokensViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B1A6B5204B4789001F546C /* NonFungibleTokensViewController.swift */; };
-		73B1A6B8204B4893001F546C /* WalletViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B1A6B7204B4893001F546C /* WalletViewController.swift */; };
 		73B1A6BC204B4FB6001F546C /* NonFungibleTokenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B1A6BB204B4FB6001F546C /* NonFungibleTokenViewModel.swift */; };
 		73B1A6BE204B55FA001F546C /* NonFungibleTokenCellViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B1A6BD204B55FA001F546C /* NonFungibleTokenCellViewModel.swift */; };
 		73B81C722087E16F00623E04 /* Realm+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B81C712087E16F00623E04 /* Realm+Extensions.swift */; };
@@ -636,6 +641,12 @@
 		29A13E321F6B1B7A00E432A2 /* Styles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Styles.swift; sourceTree = "<group>"; };
 		29AD3D4620EC443D007893C9 /* WalletCreatedController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletCreatedController.swift; sourceTree = "<group>"; };
 		29AD3D4E20F2CEEE007893C9 /* SnapshotHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SnapshotHelper.swift; path = scripts/SnapshotHelper.swift; sourceTree = SOURCE_ROOT; };
+		29AD3D5020F5B9F9007893C9 /* WalletsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletsViewController.swift; sourceTree = "<group>"; };
+		29AD3D5220F5BA2E007893C9 /* WalletTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletTableViewCell.swift; sourceTree = "<group>"; };
+		29AD3D5320F5BA2E007893C9 /* WalletTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WalletTableViewCell.xib; sourceTree = "<group>"; };
+		29AD3D5620F5BB08007893C9 /* WalletsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletsViewModel.swift; sourceTree = "<group>"; };
+		29AD3D5820F5BD97007893C9 /* WalletsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletsCoordinator.swift; sourceTree = "<group>"; };
+		29AD3D5B20F6D2E3007893C9 /* WalletTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletTitleView.swift; sourceTree = "<group>"; };
 		29AD8A031F93D6CD008E10E7 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		29AD8A051F93DC8C008E10E7 /* PushDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushDevice.swift; sourceTree = "<group>"; };
 		29AD8A071F93E1F0008E10E7 /* Trust.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Trust.entitlements; sourceTree = "<group>"; };
@@ -787,7 +798,6 @@
 		73ACEF0020163ED4003DD71D /* LockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockViewModel.swift; sourceTree = "<group>"; };
 		73ACEF0420163F46003DD71D /* LockEnterPasscodeCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockEnterPasscodeCoordinator.swift; sourceTree = "<group>"; };
 		73B1A6B5204B4789001F546C /* NonFungibleTokensViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonFungibleTokensViewController.swift; sourceTree = "<group>"; };
-		73B1A6B7204B4893001F546C /* WalletViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletViewController.swift; sourceTree = "<group>"; };
 		73B1A6BB204B4FB6001F546C /* NonFungibleTokenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonFungibleTokenViewModel.swift; sourceTree = "<group>"; };
 		73B1A6BD204B55FA001F546C /* NonFungibleTokenCellViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonFungibleTokenCellViewModel.swift; sourceTree = "<group>"; };
 		73B81C712087E16F00623E04 /* Realm+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Realm+Extensions.swift"; sourceTree = "<group>"; };
@@ -1395,6 +1405,7 @@
 			children = (
 				296AF9A21F733AB30058AF78 /* WalletCoordinator.swift */,
 				293E62701FA2F63500CB0A66 /* InitialWalletCreationCoordinator.swift */,
+				29AD3D5820F5BD97007893C9 /* WalletsCoordinator.swift */,
 			);
 			path = Coordinators;
 			sourceTree = "<group>";
@@ -1461,6 +1472,7 @@
 				7716EDC220DFB86100773010 /* VerifyPassphraseViewController.swift */,
 				77EAD88320E1B82300D14AA2 /* WalletInfoViewController.swift */,
 				29AD3D4620EC443D007893C9 /* WalletCreatedController.swift */,
+				29AD3D5020F5B9F9007893C9 /* WalletsViewController.swift */,
 			);
 			path = ViewControllers;
 			sourceTree = "<group>";
@@ -1473,6 +1485,7 @@
 				771AA961200D5EC700D25403 /* PassphraseViewModel.swift */,
 				77872D26202505C00032D687 /* EnterPasswordViewModel.swift */,
 				77EAD88720E1C02200D14AA2 /* WalletInfoViewModel.swift */,
+				29AD3D5620F5BB08007893C9 /* WalletsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -1503,7 +1516,6 @@
 				294DFBA81FE6EBFB004CEB56 /* NewTokenViewController.swift */,
 				29F1C83D1FEB5C91003780D8 /* EditTokensViewController.swift */,
 				73B1A6B5204B4789001F546C /* NonFungibleTokensViewController.swift */,
-				73B1A6B7204B4893001F546C /* WalletViewController.swift */,
 				776C1143205CF67E00449539 /* TokenViewController.swift */,
 				77B1EAFE20639DEB007970AA /* NFTokenViewController.swift */,
 				771DC9CE20EEC8AC003E2CE2 /* TokenInfoViewController.swift */,
@@ -2271,6 +2283,9 @@
 				771AA963200D5EDB00D25403 /* WordCollectionViewCell.swift */,
 				771AA965200D5F1900D25403 /* WordCollectionViewCell.xib */,
 				77EAD88920E4803D00D14AA2 /* PassphraseBackgroundShadow.swift */,
+				29AD3D5220F5BA2E007893C9 /* WalletTableViewCell.swift */,
+				29AD3D5320F5BA2E007893C9 /* WalletTableViewCell.xib */,
+				29AD3D5B20F6D2E3007893C9 /* WalletTitleView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2620,7 +2635,7 @@
 								enabled = 0;
 							};
 							com.apple.iCloud = {
-								enabled = 1;
+								enabled = 0;
 							};
 						};
 					};
@@ -2673,6 +2688,7 @@
 			files = (
 				902CAB592051818B00F96FFE /* BookmarkViewCell.xib in Resources */,
 				771AA966200D5F1900D25403 /* WordCollectionViewCell.xib in Resources */,
+				29AD3D5520F5BA2E007893C9 /* WalletTableViewCell.xib in Resources */,
 				775DF43F203E38D3009CD082 /* NonFungibleTokenViewCell.xib in Resources */,
 				73DE7B3320987D8F00AE04E6 /* NonFungibleCollectionViewCell.xib in Resources */,
 				296106CE1F777E410006164B /* LaunchScreen.storyboard in Resources */,
@@ -2895,11 +2911,11 @@
 			files = (
 				295996121FAB067600DB66A8 /* DepositCoordinator.swift in Sources */,
 				29C70C7F20199AEB0072E454 /* WKWebViewConfiguration.swift in Sources */,
+				29AD3D5C20F6D2E3007893C9 /* WalletTitleView.swift in Sources */,
 				73ACEF0120163ED4003DD71D /* LockViewModel.swift in Sources */,
 				29AD8A041F93D6CD008E10E7 /* Constants.swift in Sources */,
 				29FF12FE1F75EA3F00AFD326 /* Keystore.swift in Sources */,
 				29AD3D4720EC443D007893C9 /* WalletCreatedController.swift in Sources */,
-				73B1A6B8204B4893001F546C /* WalletViewController.swift in Sources */,
 				A2E43B4E20802879001FAD3D /* UINavigationController.swift in Sources */,
 				2963B6B11F9891F5003063C1 /* UIButton.swift in Sources */,
 				29F114F21FA7966300114A29 /* PrivateKeyRule.swift in Sources */,
@@ -3005,10 +3021,12 @@
 				77EAD88620E1C00C00D14AA2 /* WalletInfoType.swift in Sources */,
 				775DF42B203693CD009CD082 /* Preferences.swift in Sources */,
 				296421991F70C1F900EB363B /* EmptyView.swift in Sources */,
+				29AD3D5120F5B9F9007893C9 /* WalletsViewController.swift in Sources */,
 				298542E51FBA9B0700CB5081 /* ShapeShift.swift in Sources */,
 				77B806B220778F6A005FDCBE /* URLViewModel.swift in Sources */,
 				29C70C7C201990540072E454 /* SendTransaction.swift in Sources */,
 				73D30FF2204F274B00433377 /* NetworkStateView.swift in Sources */,
+				29AD3D5720F5BB08007893C9 /* WalletsViewModel.swift in Sources */,
 				771AA962200D5EC700D25403 /* PassphraseViewModel.swift in Sources */,
 				73C41C71201B46AD00243C6C /* LockEnterPasscodeViewModel.swift in Sources */,
 				2959960C1FAB03EC00DB66A8 /* CoinbaseBuyWidget.swift in Sources */,
@@ -3215,6 +3233,7 @@
 				2963B6C11F9AE0E4003063C1 /* Data.swift in Sources */,
 				2932045E1F8EEE760095B7C1 /* BalanceCoordinator.swift in Sources */,
 				77CB8398206B8E1C006F34A8 /* ScanQRCodeCoordinator.swift in Sources */,
+				29AD3D5920F5BD97007893C9 /* WalletsCoordinator.swift in Sources */,
 				771D5371205923F500C79485 /* NetworkConditionViewModel.swift in Sources */,
 				2912CD321F6A83EE00C6CBE3 /* WelcomeViewController.swift in Sources */,
 				29F114F61FA8147300114A29 /* RequestCoordinator.swift in Sources */,
@@ -3237,6 +3256,7 @@
 				CCA4FE381FD428B300749AE4 /* JailbreakChecker.swift in Sources */,
 				291A1B651F974E8600ADEC80 /* WalletEntryPoint.swift in Sources */,
 				2959960E1FAB05C200DB66A8 /* TransactionsEmptyView.swift in Sources */,
+				29AD3D5420F5BA2E007893C9 /* WalletTableViewCell.swift in Sources */,
 				29BB94931F6FC380009B09CC /* BalanceViewModel.swift in Sources */,
 				BB03A86D20416AF600649DA0 /* BalanceStatus.swift in Sources */,
 				29D03F1D1F712183006E548C /* Button.swift in Sources */,
@@ -3513,7 +3533,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 260;
+				CURRENT_PROJECT_VERSION = 265;
 				DEVELOPMENT_TEAM = 9873B38DWV;
 				ENABLE_BITCODE = YES;
 				GCC_WARN_UNUSED_LABEL = YES;
@@ -3541,7 +3561,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 260;
+				CURRENT_PROJECT_VERSION = 265;
 				DEVELOPMENT_TEAM = 9873B38DWV;
 				ENABLE_BITCODE = YES;
 				GCC_WARN_UNUSED_LABEL = YES;

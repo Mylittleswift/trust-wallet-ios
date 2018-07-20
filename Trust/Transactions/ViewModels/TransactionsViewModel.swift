@@ -36,12 +36,6 @@ struct TransactionsViewModel {
         return UIColor(hex: "e1e1e1")
     }()
 
-    var isBuyActionAvailable: Bool {
-        switch config.server {
-        case .main, .kovan, .classic, .callisto, .ropsten, .rinkeby, .poa, .sokol, .gochain, .custom: return false
-        }
-    }
-
     var numberOfSections: Int {
         return storage.transactionSections.count
     }
@@ -50,18 +44,13 @@ struct TransactionsViewModel {
         return !storage.transactions.isEmpty
     }
 
-    var badgeValue: String? {
-        let pendingTransactions = storage.pendingObjects
-        return pendingTransactions.isEmpty ? .none : "\(pendingTransactions.count)"
-    }
-
     private let config: Config
-    private let network: TrustNetwork
+    private let network: NetworkProtocol
     private let storage: TransactionsStorage
     private let session: WalletSession
 
     init(
-        network: TrustNetwork,
+        network: NetworkProtocol,
         storage: TransactionsStorage,
         session: WalletSession,
         config: Config = Config()
@@ -70,15 +59,9 @@ struct TransactionsViewModel {
         self.storage = storage
         self.session = session
         self.config = config
-    }
 
-    func transactionsUpdateObservation(with block: @escaping () -> Void) {
         self.storage.transactionsObservation()
-        self.storage.transactionsUpdateHandler = block
-    }
-
-    func invalidateTransactionsObservation() {
-        self.storage.invalidateTransactionsObservation()
+        self.storage.updateTransactionSection()
     }
 
     func numberOfItems(for section: Int) -> Int {
@@ -96,10 +79,10 @@ struct TransactionsViewModel {
         }
 
         if NSCalendar.current.isDateInToday(date) {
-            return NSLocalizedString("Today", value: "Today", comment: "")
+            return R.string.localizable.today()
         }
         if NSCalendar.current.isDateInYesterday(date) {
-            return NSLocalizedString("Yesterday", value: "Yesterday", comment: "")
+            return R.string.localizable.yesterday()
         }
         return stringDate
     }
@@ -115,7 +98,9 @@ struct TransactionsViewModel {
     }
 
     func cellViewModel(for indexPath: IndexPath) -> TransactionCellViewModel {
-        return TransactionCellViewModel(transaction: storage.transactionSections[indexPath.section].items[indexPath.row], config: config, chainState: session.chainState, currentWallet: session.account.wallet)
+        let server = RPCServer(chainID: 1)!
+        return TransactionCellViewModel(transaction: storage.transactionSections[indexPath.section].items[indexPath.row], config: config, chainState: ChainState(server: server), currentWallet: session.account, server: server)
+        //Refactor
     }
 
     func statBlock() -> Int {
@@ -135,13 +120,9 @@ struct TransactionsViewModel {
                 return
             }
             self.storage.add(transactions)
+            self.storage.updateTransactionSection()
             completion?()
         }
-    }
-
-    func addSentTransaction(_ transaction: SentTransaction) {
-        let transaction = SentTransaction.from(from: session.account.address, transaction: transaction)
-        storage.add([transaction])
     }
 
     func fetchPending() {
@@ -155,6 +136,7 @@ struct TransactionsViewModel {
                     default:
                         self.storage.update(state: tempResult.1, for: tempResult.0)
                     }
+                    self.storage.updateTransactionSection()
                 case .failure:
                     break
                 }

@@ -80,12 +80,16 @@ final class BrowserViewController: UIViewController {
         return config
     }()
 
+    let server: RPCServer
+
     init(
         account: WalletInfo,
-        config: Config
+        config: Config,
+        server: RPCServer
     ) {
         self.account = account
         self.sessionConfig = config
+        self.server = server
 
         super.init(nibName: nil, bundle: nil)
 
@@ -284,7 +288,9 @@ extension BrowserViewController: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let command = DappAction.fromMessage(message) else { return }
         let requester = DAppRequester(title: webView.title, url: webView.url)
-        let action = DappAction.fromCommand(command, requester: requester)
+        //TODO: Refactor
+        let transfer = Transfer(server: server, type: .dapp(requester))
+        let action = DappAction.fromCommand(command, transfer: transfer)
 
         delegate?.didCall(action: action, callbackID: command.id)
     }

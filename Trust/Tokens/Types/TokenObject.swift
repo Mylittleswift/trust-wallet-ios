@@ -10,21 +10,33 @@ struct TokenObjectList: Decodable {
     let contract: TokenObject
 }
 
+enum TokenObjectType: String {
+    case coin
+    case erc20
+}
+
 final class TokenObject: Object, Decodable {
     static let DEFAULT_BALANCE = 0.00
 
     @objc dynamic var contract: String = ""
     @objc dynamic var name: String = ""
+    @objc dynamic var coinInt: Int = -1
+    @objc dynamic var chainID: Int = -1
+    @objc dynamic var type: String = TokenObjectType.coin.rawValue
     @objc dynamic var symbol: String = ""
     @objc dynamic var decimals: Int = 0
     @objc dynamic var value: String = ""
     @objc dynamic var isCustom: Bool = false
     @objc dynamic var isDisabled: Bool = false
     @objc dynamic var balance: Double = DEFAULT_BALANCE
+    @objc dynamic var createdAt: Date = Date()
 
     convenience init(
         contract: String = "",
         name: String = "",
+        coin: Int = -1,
+        chainID: Int = -1,
+        type: TokenObjectType,
         symbol: String = "",
         decimals: Int = 0,
         value: String,
@@ -34,6 +46,9 @@ final class TokenObject: Object, Decodable {
         self.init()
         self.contract = contract
         self.name = name
+        self.coinInt = coin
+        self.chainID = chainID
+        self.type = type.rawValue
         self.symbol = symbol
         self.decimals = decimals
         self.value = value
@@ -57,7 +72,7 @@ final class TokenObject: Object, Decodable {
         if let convertedAddress = EthereumAddress(string: contract)?.description {
             contract = convertedAddress
         }
-        self.init(contract: contract, name: name, symbol: symbol, decimals: decimals, value: "0", isCustom: false, isDisabled: false)
+        self.init(contract: contract, name: name, coin: -1, chainID: -1, type: .erc20, symbol: symbol, decimals: decimals, value: "0", isCustom: false, isDisabled: false)
     }
 
     required init() {
@@ -98,13 +113,11 @@ final class TokenObject: Object, Decodable {
     }
 
     var imagePath: String {
-        let config = Config.current
         let formatter = ImageURLFormatter()
-        if TokensDataStore.etherToken(for: config) == self {
-            return formatter.image(chainID: config.chainID)
-        } else {
+        guard let coin = coin else {
             return formatter.image(for: contract)
         }
+        return formatter.image(for: coin)
     }
 
     var imageURL: URL? {
@@ -117,5 +130,17 @@ final class TokenObject: Object, Decodable {
 
     var contractAddress: EthereumAddress {
         return EthereumAddress(string: contract)!
+    }
+
+    var coin: Coin? {
+        return Coin(rawValue: coinInt)
+    }
+
+    var isCoin: Bool {
+        return coin != nil
+    }
+
+    var tokenType: TokenObjectType {
+        return TokenObjectType(rawValue: type) ?? .coin
     }
 }

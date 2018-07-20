@@ -21,25 +21,29 @@ final class BalanceCoordinator {
     var ethTokenObservation: NotificationToken?
     var viewModel: BalanceViewModel {
         return BalanceViewModel(
+            server: server,
             balance: balance,
             rate: currencyRate
         )
     }
+    let server: RPCServer
     init(
         account: WalletInfo,
         config: Config,
-        storage: TokensDataStore
+        storage: TokensDataStore,
+        server: RPCServer
     ) {
         self.account = account
         self.config = config
         self.storage = storage
+        self.server = server
         balanceObservation()
     }
     func refresh() {
         balanceObservation()
     }
     private func balanceObservation() {
-        guard let token = storage.enabledObject.first(where: { $0.name == config.server.name }) else {
+        guard let token = storage.enabledObject.first(where: { $0.name == server.name }) else {
             return
         }
         updateBalance(for: token, with: nil)

@@ -2,6 +2,7 @@
 
 import Foundation
 import TrustCore
+import TrustKeystore
 import UIKit
 import RealmSwift
 import URLNavigator
@@ -11,6 +12,54 @@ import Result
 protocol InCoordinatorDelegate: class {
     func didCancel(in coordinator: InCoordinator)
     func didUpdateAccounts(in coordinator: InCoordinator)
+}
+
+enum CoinType {
+    case coin(Account, TokenObject)
+    case tokenOf(Account, TokenObject)
+}
+
+struct CoinTypeViewModel {
+
+    let type: CoinType
+
+    var account: Account {
+        switch type {
+        case .coin(let account,_):
+            return account
+        case .tokenOf(let account,_):
+            return account
+        }
+    }
+
+    var address: String {
+        switch type {
+        case .coin(let account, _):
+            return account.address.description
+        case .tokenOf(let account, _):
+            return account.address.description
+        }
+    }
+
+    var name: String {
+        switch type {
+        case .coin(_, let token):
+            return token.name
+        case .tokenOf(_, let token):
+            return token.name
+        }
+    }
+
+    var server: RPCServer {
+        switch account.coin! {
+        case .ethereum: return RPCServer.main
+        case .ethereumClassic: return RPCServer.classic
+        case .gochain: return RPCServer.gochain
+        case .poa: return RPCServer.poa
+        case .callisto: return RPCServer.callisto
+        case .bitcoin: return RPCServer.main
+        }
+    }
 }
 
 class InCoordinator: Coordinator {
@@ -45,6 +94,12 @@ class InCoordinator: Coordinator {
     }()
     let events: [BranchEvent] = []
 
+    lazy var walletsCoordinator: WalletsCoordinator = {
+        let coordinator = WalletsCoordinator(keystore: keystore)
+        coordinator.delegate = self
+        return coordinator
+    }()
+
     init(
         navigationController: NavigationController = NavigationController(),
         wallet: WalletInfo,
@@ -69,11 +124,13 @@ class InCoordinator: Coordinator {
 
         helpUsCoordinator.start()
         addCoordinator(helpUsCoordinator)
+
+        walletsCoordinator.start()
     }
 
     func showTabBar(for account: WalletInfo) {
 
-        let migration = MigrationInitializer(account: account.wallet, chainID: config.chainID)
+        let migration = MigrationInitializer(account: account)
         migration.perform()
 
         let sharedMigration = SharedMigrationInitializer()
@@ -82,30 +139,15 @@ class InCoordinator: Coordinator {
         let realm = self.realm(for: migration.config)
         let sharedRealm = self.realm(for: sharedMigration.config)
 
-        let walletStorage = WalletStorage(realm: sharedRealm)
-        let tokensStorage = TokensDataStore(realm: realm, config: config)
-        let balanceCoordinator =  TokensBalanceService()
         let viewModel = InCoordinatorViewModel(config: config)
-        let trustNetwork = TrustNetwork(
-            provider: TrustProviderFactory.makeProvider(),
-            APIProvider: TrustProviderFactory.makeAPIProvider(),
-            balanceService: balanceCoordinator,
-            account: account,
-            config: config
-        )
-        let balance =  BalanceCoordinator(account: account, config: config, storage: tokensStorage)
-        let transactionsStorage = TransactionsStorage(
-            realm: realm,
-            account: account
-        )
-        let nonceProvider = GetNonceProvider(storage: transactionsStorage)
+
         let session = WalletSession(
             account: account,
-            config: config,
-            balanceCoordinator: balance,
-            nonceProvider: nonceProvider
+            realm: realm,
+            sharedRealm: sharedRealm,
+            config: config
         )
-        transactionsStorage.removeTransactions(for: [.failed, .unknown])
+        session.transactionsStorage.removeTransactions(for: [.failed, .unknown])
 
         let tabBarController = TabBarController()
         tabBarController.tabBar.isTranslucent = false
@@ -119,9 +161,8 @@ class InCoordinator: Coordinator {
         let walletCoordinator = TokensCoordinator(
             session: session,
             keystore: keystore,
-            tokensStorage: tokensStorage,
-            network: trustNetwork,
-            transactionsStore: transactionsStorage
+            tokensStorage: session.tokensStorage,
+            transactionsStore: session.transactionsStorage
         )
         walletCoordinator.rootViewController.tabBarItem = viewModel.walletBarItem
         walletCoordinator.delegate = self
@@ -131,9 +172,8 @@ class InCoordinator: Coordinator {
         let settingsCoordinator = SettingsCoordinator(
             keystore: keystore,
             session: session,
-            storage: transactionsStorage,
-            walletStorage: walletStorage,
-            balanceCoordinator: balanceCoordinator,
+            storage: session.transactionsStorage,
+            walletStorage: session.walletStorage,
             sharedRealm: sharedRealm
         )
         settingsCoordinator.rootViewController.tabBarItem = viewModel.settingsBarItem
@@ -162,15 +202,12 @@ class InCoordinator: Coordinator {
         addCoordinator(localSchemeCoordinator)
         self.localSchemeCoordinator = localSchemeCoordinator
 
-        observePendingTransactions(from: transactionsStorage)
+        observePendingTransactions(from: session.transactionsStorage)
     }
 
     func changeWallet() {
-        let coordinator = WalletsCoordinator(keystore: keystore)
-        coordinator.start()
-        coordinator.delegate = self
-        addCoordinator(coordinator)
-        navigationController.present(coordinator.navigationController, animated: true)
+        walletsCoordinator.walletController.tableView.scrollOnTop()
+        navigationController.present(walletsCoordinator.navigationController, animated: true)
     }
 
     func showTab(_ selectTab: Tabs) {
@@ -197,7 +234,6 @@ class InCoordinator: Coordinator {
 
     func restart(for account: WalletInfo) {
         settingsCoordinator?.rootViewController.navigationItem.leftBarButtonItem = nil
-        settingsCoordinator?.rootViewController.networkStateView = nil
         localSchemeCoordinator?.delegate = nil
         localSchemeCoordinator = nil
         navigationController.dismiss(animated: false, completion: nil)
@@ -214,36 +250,71 @@ class InCoordinator: Coordinator {
         deviceChecker.start()
     }
 
-    func showPaymentFlow(for type: PaymentFlow) {
+//    func showPaymentFlow(for type: PaymentFlow) {
+//        guard let tokensCoordinator = tokensCoordinator else { return }
+//        let nav = tokensCoordinator.navigationController
+//        let session = tokensCoordinator.session
+//        let tokenStorage = tokensCoordinator.store
+//
+//        guard let coin = token.coin else { return }
+//        let acc = session.account.accounts.filter { $0.coin == coin }.first!
+//
+//        switch (type, session.account.type) {
+//        case (.send(let type), .privateKey(let account)),
+//             (.send(let type), .hd(let account)):
+//
+//
+//        case (.request(let token), _):
+//
+//        case (.send, .address):
+//            nav.displayError(error: InCoordinatorError.onlyWatchAccount)
+//        }
+//    }
+
+    func sendFlow(for token: TokenObject) {
         guard let tokensCoordinator = tokensCoordinator else { return }
         let nav = tokensCoordinator.navigationController
         let session = tokensCoordinator.session
-        let tokenStorage = tokensCoordinator.store
 
-        switch (type, session.account.wallet.type) {
-        case (.send(let type), .privateKey(let account)),
-             (.send(let type), .hd(let account)):
-            let coordinator = SendCoordinator(
-                transferType: type,
-                navigationController: nav,
-                session: session,
-                keystore: keystore,
-                storage: tokenStorage,
-                account: account.accounts[0]
-            )
-            coordinator.delegate = self
-            addCoordinator(coordinator)
-            nav.pushCoordinator(coordinator: coordinator, animated: true)
-        case (.request(let token), _):
-            let coordinator = RequestCoordinator(
-                session: session,
-                token: token
-            )
-            addCoordinator(coordinator)
-            nav.pushCoordinator(coordinator: coordinator, animated: true)
-        case (.send, .address):
-            nav.displayError(error: InCoordinatorError.onlyWatchAccount)
-        }
+        let transfer: Transfer = {
+            if token.isCoin {
+                let server = RPCServer(chainID: token.chainID)!
+                let transfer = Transfer(server: server, type: .ether(destination: .none))
+                return transfer
+            } else {
+                let server = RPCServer.main
+                let transfer = Transfer(server: server, type: .token(token))
+                return transfer
+            }
+        }()
+
+        let coordinator = SendCoordinator(
+            transfer: transfer,
+            navigationController: nav,
+            session: session,
+            keystore: keystore,
+            account: session.account.currentAccount
+        )
+        coordinator.delegate = self
+        addCoordinator(coordinator)
+        nav.pushCoordinator(coordinator: coordinator, animated: true)
+    }
+
+    func requestFlow(for token: TokenObject) {
+        guard let tokensCoordinator = tokensCoordinator else { return }
+        let nav = tokensCoordinator.navigationController
+        let session = tokensCoordinator.session
+
+        guard let coin = token.coin else { return }
+        let acc = session.account.accounts.filter { $0.coin == coin }.first!
+
+        let viewModel = CoinTypeViewModel(type: .coin(acc, token))
+        let coordinator = RequestCoordinator(
+            session: session,
+            coinTypeViewModel: viewModel
+        )
+        addCoordinator(coordinator)
+        nav.pushCoordinator(coordinator: coordinator, animated: true)
     }
 
     private func handlePendingTransaction(transaction: SentTransaction) {
@@ -298,23 +369,24 @@ extension InCoordinator: SettingsCoordinatorDelegate {
         restart(for: account)
     }
 
-    func didUpdateAccounts(in coordinator: SettingsCoordinator) {
-        delegate?.didUpdateAccounts(in: self)
-    }
-
     func didPressURL(_ url: URL, in coordinator: SettingsCoordinator) {
         showTab(.browser(openURL: url))
     }
 }
 
 extension InCoordinator: TokensCoordinatorDelegate {
-    func didPress(for type: PaymentFlow, in coordinator: TokensCoordinator) {
-        showPaymentFlow(for: type)
+    func didPressSend(for token: TokenObject, in coordinator: TokensCoordinator) {
+        sendFlow(for: token)
+    }
+
+    func didPressRequest(for token: TokenObject, in coordinator: TokensCoordinator) {
+        requestFlow(for: token)
     }
 
     func didPressDiscover(in coordinator: TokensCoordinator) {
-        guard let url = Config().openseaURL else { return }
-        showTab(.browser(openURL: url))
+        //Refactor
+        //guard let url = Config().openseaURL else { return }
+        //showTab(.browser(openURL: url))
     }
 
     func didPress(url: URL, in coordinator: TokensCoordinator) {
@@ -352,13 +424,17 @@ extension InCoordinator: BrowserCoordinatorDelegate {
 }
 
 extension InCoordinator: WalletsCoordinatorDelegate {
+    func didUpdateAccounts(in coordinator: WalletsCoordinator) {
+        delegate?.didUpdateAccounts(in: self)
+    }
+
     func didSelect(wallet: WalletInfo, in coordinator: WalletsCoordinator) {
         coordinator.navigationController.dismiss(animated: true)
-        removeCoordinator(coordinator)
+        // removeCoordinator(coordinator)
         restart(for: wallet)
     }
     func didCancel(in coordinator: WalletsCoordinator) {
         navigationController.dismiss(animated: true)
-        removeCoordinator(coordinator)
+        // removeCoordinator(coordinator)
     }
 }

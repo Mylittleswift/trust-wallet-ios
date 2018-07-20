@@ -56,11 +56,19 @@ class EtherKeystore: Keystore {
                 return "hd-wallet-" + account.address.description
             }
         }
-        keyStore.wallets.forEach { wallet in
-            let account = wallet.accounts[0]
-            let password = keychain.get(keychainOldKey(for: account)) ?? PasswordGenerator.generateRandom()
-            setPassword(password, for: wallet)
+        keyStore.wallets.filter { !$0.accounts.isEmpty }.forEach { wallet in
+            if let account = wallet.accounts.first, let password = keychain.get(keychainOldKey(for: account)) {
+                setPassword(password, for: wallet)
+            }
         }
+
+        // Move string addresses to WalletAddress
+        let addresses = watchAddresses.compactMap {
+            EthereumAddress(string: $0)
+        }.compactMap {
+            WalletAddress(coin: Coin.ethereum, address: $0)
+        }
+        storage.store(address: addresses)
         return true
     }
 
@@ -68,27 +76,31 @@ class EtherKeystore: Keystore {
         return !wallets.isEmpty
     }
 
-    var wallets: [WalletInfo] {
-        return accounts.map {
-            return WalletInfo(wallet: $0, info: storage.get(for: $0))
-        }.sorted(by: { $0.info.createdAt < $1.info.createdAt })
+    var mainWallet: WalletInfo? {
+        return wallets.filter { $0.mainWallet }.first
     }
 
-    private var accounts: [WalletStruct] {
-        let addresses = watchAddresses.compactMap { EthereumAddress(string: $0) }
+    var wallets: [WalletInfo] {
         return [
-            keyStore.wallets.compactMap {
+            keyStore.wallets.filter { !$0.accounts.isEmpty }.compactMap {
                 switch $0.type {
                 case .encryptedKey:
-                    return WalletStruct(type: .privateKey($0))
+                    let type = WalletType.privateKey($0)
+                    return WalletInfo(type: type, info: storage.get(for: type))
                 case .hierarchicalDeterministicWallet:
-                    return WalletStruct(type: .hd($0))
+                    let type = WalletType.hd($0)
+                    return WalletInfo(type: type, info: storage.get(for: type))
                 }
+            }.filter { !$0.accounts.isEmpty },
+            storage.addresses.compactMap {
+                guard let coin = $0.coin, let address = $0.address else { return .none }
+                let type = WalletType.address(coin, address)
+                return WalletInfo(type: type, info: storage.get(for: type))
             },
-            addresses.map { WalletStruct(type: .address($0)) },
-        ].flatMap { $0 }
+        ].flatMap { $0 }.sorted(by: { $0.info.createdAt < $1.info.createdAt })
     }
 
+    // Deprecated
     private var watchAddresses: [String] {
         set {
             let data = NSKeyedArchiver.archivedData(withRootObject: newValue)
@@ -102,16 +114,16 @@ class EtherKeystore: Keystore {
 
     var recentlyUsedWallet: WalletInfo? {
         set {
-            keychain.set(newValue?.wallet.description ?? "", forKey: Keys.recentlyUsedWallet, withAccess: defaultKeychainAccess)
+            keychain.set(newValue?.description ?? "", forKey: Keys.recentlyUsedWallet, withAccess: defaultKeychainAccess)
         }
         get {
             let walletKey = keychain.get(Keys.recentlyUsedWallet)
-            let foundWallet = wallets.filter { $0.wallet.description == walletKey }.first
+            let foundWallet = wallets.filter { $0.description == walletKey }.first
             guard let wallet = foundWallet else {
                 // Old way to match recently selected address
                 let address = keychain.get(Keys.recentlyUsedAddress)
                 return wallets.filter {
-                    $0.wallet.address.description == address || $0.wallet.address.description.lowercased() == address?.lowercased()
+                    $0.address.description == address || $0.description.lowercased() == address?.lowercased()
                 }.first
             }
             return wallet
@@ -129,14 +141,15 @@ class EtherKeystore: Keystore {
         }
     }
 
-    func importWallet(type: ImportType, completion: @escaping (Result<WalletStruct, KeystoreError>) -> Void) {
+    func importWallet(type: ImportType, coin: Coin, completion: @escaping (Result<WalletInfo, KeystoreError>) -> Void) {
         let newPassword = PasswordGenerator.generateRandom()
         switch type {
         case .keystore(let string, let password):
             importKeystore(
                 value: string,
                 password: password,
-                newPassword: newPassword
+                newPassword: newPassword,
+                coin: coin
             ) { result in
                 switch result {
                 case .success(let account):
@@ -149,10 +162,10 @@ class EtherKeystore: Keystore {
             let privateKeyData = PrivateKey(data: Data(hexString: privateKey)!)!
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
-                    //TODO: Blockchain
-                    let wallet = try self.keyStore.import(privateKey: privateKeyData, password: newPassword, coin: .ethereum)
+                    let wallet = try self.keyStore.import(privateKey: privateKeyData, password: newPassword, coin: coin)
+                    self.setPassword(newPassword, for: wallet)
                     DispatchQueue.main.async {
-                        completion(.success(WalletStruct(type: .privateKey(wallet))))
+                        completion(.success(WalletInfo(type: .privateKey(wallet))))
                     }
                 } catch {
                     DispatchQueue.main.async {
@@ -160,31 +173,31 @@ class EtherKeystore: Keystore {
                     }
                 }
             }
-        case .mnemonic(let words, let passphrase):
+        case .mnemonic(let words, let passphrase, let derivationPath):
             let string = words.map { String($0) }.joined(separator: " ")
             if !Crypto.isValid(mnemonic: string) {
                 return completion(.failure(KeystoreError.invalidMnemonicPhrase))
             }
             do {
-                let account = try keyStore.import(mnemonic: string, passphrase: passphrase, encryptPassword: newPassword, derivationPath: Blockchain.ethereum.derivationPath(at: 0))
+                let account = try keyStore.import(mnemonic: string, passphrase: passphrase, encryptPassword: newPassword, derivationPath: derivationPath)
                 setPassword(newPassword, for: account)
-                completion(.success(WalletStruct(type: .hd(account))))
+                completion(.success(WalletInfo(type: .hd(account))))
             } catch {
                 return completion(.failure(KeystoreError.duplicateAccount))
             }
         case .address(let address):
-            let addressString = address.description
-            guard !watchAddresses.contains(addressString) else {
+            let watchAddress = WalletAddress(coin: coin, address: address)
+            guard !storage.addresses.contains(watchAddress) else {
                 return completion(.failure(.duplicateAccount))
             }
-            self.watchAddresses = [watchAddresses, [addressString]].flatMap { $0 }
-            completion(.success(WalletStruct(type: .address(address))))
+            storage.store(address: [watchAddress])
+            completion(.success(WalletInfo(type: .address(coin, address))))
         }
     }
 
-    func importKeystore(value: String, password: String, newPassword: String, completion: @escaping (Result<WalletStruct, KeystoreError>) -> Void) {
+    func importKeystore(value: String, password: String, newPassword: String, coin: Coin, completion: @escaping (Result<WalletInfo, KeystoreError>) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
-            let result = self.importKeystore(value: value, password: password, newPassword: newPassword)
+            let result = self.importKeystore(value: value, password: password, newPassword: newPassword, coin: coin)
             DispatchQueue.main.async {
                 switch result {
                 case .success(let account):
@@ -197,15 +210,22 @@ class EtherKeystore: Keystore {
     }
 
     func createAccout(password: String) -> Wallet {
-        let wallet = try! keyStore.createWallet(password: password, derivationPaths: [Blockchain.ethereum.derivationPath(at: 0)])
+        let wallet = try! keyStore.createWallet(
+            password: password,
+            derivationPaths: [
+                Coin.ethereum.derivationPath(at: 0),
+                Coin.poa.derivationPath(at: 0),
+                Coin.callisto.derivationPath(at: 0),
+            ]
+        )
         let _ = setPassword(password, for: wallet)
         return wallet
     }
 
-    func importPrivateKey(privateKey: PrivateKey, password: String) -> Result<WalletStruct, KeystoreError> {
+    func importPrivateKey(privateKey: PrivateKey, password: String, coin: Coin) -> Result<WalletInfo, KeystoreError> {
         do {
-            let wallet = try keyStore.import(privateKey: privateKey, password: password, coin: .ethereum)
-            let w = WalletStruct(type: .privateKey(wallet))
+            let wallet = try keyStore.import(privateKey: privateKey, password: password, coin: coin)
+            let w = WalletInfo(type: .privateKey(wallet))
             let _ = setPassword(password, for: wallet)
             return .success(w)
         } catch {
@@ -213,15 +233,15 @@ class EtherKeystore: Keystore {
         }
     }
 
-    func importKeystore(value: String, password: String, newPassword: String) -> Result<WalletStruct, KeystoreError> {
+    func importKeystore(value: String, password: String, newPassword: String, coin: Coin) -> Result<WalletInfo, KeystoreError> {
         guard let data = value.data(using: .utf8) else {
             return (.failure(.failedToParseJSON))
         }
         do {
             //TODO: Blockchain. Pass blockchain ID
-            let wallet = try keyStore.import(json: data, password: password, newPassword: newPassword, coin: .ethereum)
+            let wallet = try keyStore.import(json: data, password: password, newPassword: newPassword, coin: coin)
             let _ = setPassword(newPassword, for: wallet)
-            return .success(WalletStruct(type: .hd(wallet)))
+            return .success(WalletInfo(type: .hd(wallet)))
         } catch {
             if case KeyStore.Error.accountAlreadyExists = error {
                 return .failure(.duplicateAccount)
@@ -297,7 +317,7 @@ class EtherKeystore: Keystore {
         }
     }
 
-    func delete(wallet: WalletStruct) -> Result<Void, KeystoreError> {
+    func delete(wallet: WalletInfo) -> Result<Void, KeystoreError> {
         switch wallet.type {
         case .privateKey(let w), .hd(let w):
             guard let password = getPassword(for: w) else {
@@ -309,19 +329,36 @@ class EtherKeystore: Keystore {
             } catch {
                 return .failure(.failedToDeleteAccount)
             }
-        case .address(let address):
-            watchAddresses = watchAddresses.filter { $0 != address.description }
+        case .address(let coin, let address):
+            let walletAddress = WalletAddress(coin: coin, address: address)
+            storage.delete(address: walletAddress)
             return .success(())
         }
     }
 
-    func delete(wallet: WalletStruct, completion: @escaping (Result<Void, KeystoreError>) -> Void) {
+    func delete(wallet: WalletInfo, completion: @escaping (Result<Void, KeystoreError>) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             let result = self.delete(wallet: wallet)
             DispatchQueue.main.async {
                 completion(result)
             }
         }
+    }
+
+    func addAccount(to wallet: Wallet, derivationPaths: [DerivationPath]) -> Result<Void, KeystoreError> {
+        guard let password = getPassword(for: wallet) else {
+            return .failure(.failedToDeleteAccount)
+        }
+        try? keyStore.addAccounts(wallet: wallet, derivationPaths: derivationPaths, password: password)
+        return .success(())
+    }
+
+    func update(wallet: Wallet) -> Result<Void, KeystoreError> {
+        guard let password = getPassword(for: wallet) else {
+            return .failure(.failedToDeleteAccount)
+        }
+        try? keyStore.update(wallet: wallet, password: password, newPassword: password)
+        return .success(())
     }
 
     func signPersonalMessage(_ message: Data, for account: Account) -> Result<Data, KeystoreError> {
@@ -409,6 +446,8 @@ class EtherKeystore: Keystore {
                     object.name = name
                 case .backup(let completedBackup):
                     object.completedBackup = completedBackup
+                case .mainWallet(let mainWallet):
+                    object.mainWallet = mainWallet
                 }
             }
             storage.realm.add(object, update: true)

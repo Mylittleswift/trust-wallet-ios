@@ -11,7 +11,7 @@ final class TokenBalanceOperation: TrustOperation {
         network: NetworkProtocol,
         address: EthereumAddress,
         store: TokensDataStore
-        ) {
+    ) {
         self.network = network
         self.address = address
         self.store = store
@@ -33,12 +33,13 @@ final class TokenBalanceOperation: TrustOperation {
                 self?.finish(true)
                 return
             }
+            NSLog("balance \(balance)")
             strongSelf.updateModel(with: balance)
         }
     }
 
     private func updateModel(with balance: Balance) {
-        self.store.update(balance: balance.value, for: self.address)
+        self.store.update(balance: balance.value, for: address)
         self.executing(false)
         self.finish(true)
     }

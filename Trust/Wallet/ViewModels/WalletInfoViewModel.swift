@@ -1,6 +1,7 @@
 // Copyright DApps Platform Inc. All rights reserved.
 
 import Foundation
+import TrustKeystore
 
 struct FormSection {
     let footer: String?
@@ -17,15 +18,25 @@ struct FormSection {
 struct WalletInfoViewModel {
 
     let wallet: WalletInfo
+    let currentAccount: Account
 
     init(
-        wallet: WalletInfo
+        wallet: WalletInfo,
+        account: Account
     ) {
         self.wallet = wallet
+        self.currentAccount = account
     }
 
     var title: String {
         return R.string.localizable.manage()
+    }
+
+    var name: String {
+        guard !wallet.mainWallet else {
+            return CoinViewModel(coin: wallet.coin ?? .ethereum).displayName
+        }
+        return wallet.info.name
     }
 
     var nameTitle: String {
@@ -33,17 +44,17 @@ struct WalletInfoViewModel {
     }
 
     var sections: [FormSection] {
-        switch wallet.wallet.type {
-        case .privateKey(let account):
+        switch wallet.type {
+        case .privateKey:
             return [
                 FormSection(
                     rows: [
-                        .exportKeystore(wallet.wallet.account!),
-                        .exportPrivateKey(wallet.wallet.account!),
+                        .exportKeystore(currentAccount),
+                        .exportPrivateKey(currentAccount),
                     ]
                 ),
                 FormSection(
-                    footer: wallet.address.description,
+                    footer: currentAccount.address.description,
                     rows: [
                         .copyAddress(wallet.address),
                     ]
@@ -55,25 +66,29 @@ struct WalletInfoViewModel {
                     rows: [
                         .exportRecoveryPhrase(account),
                         //.exportKeystore(account),
-                        .exportPrivateKey(wallet.wallet.account!),
+                        .exportPrivateKey(currentAccount),
                     ]
                 ),
                 FormSection(
-                    footer: wallet.address.description,
+                    footer: currentAccount.address.description,
                     rows: [
                         .copyAddress(wallet.address),
                     ]
                 ),
             ]
-        case .address(let address):
+        case .address(_, let address):
             return [
                 FormSection(
-                    footer: wallet.address.description,
+                    footer: currentAccount.address.description,
                     rows: [
                         .copyAddress(address),
                     ]
                 ),
             ]
         }
+    }
+
+    var canEditName: Bool {
+        return !wallet.mainWallet
     }
 }

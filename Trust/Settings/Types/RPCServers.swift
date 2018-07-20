@@ -21,6 +21,21 @@ enum RPCServer {
     case gochain
     case custom(CustomRPC)
 
+    var id: String {
+        switch self {
+        case .main: return "ethereum"
+        case .kovan: return "kovan"
+        case .ropsten: return "ropsten"
+        case .rinkeby: return "rinkeby"
+        case .poa: return "poa"
+        case .sokol: return "sokol"
+        case .classic: return "classic"
+        case .callisto: return "callisto"
+        case .gochain: return "gochain"
+        case .custom: return "custom"
+        }
+    }
+
     var chainID: Int {
         switch self {
         case .main: return 1
@@ -34,6 +49,22 @@ enum RPCServer {
         case .gochain: return 60
         case .custom(let custom):
             return custom.chainID
+        }
+    }
+
+    var contract: String {
+        switch self {
+        case .main: return "0x000000000000000000000000000000000000003c"
+        case .kovan: return "0x0000000000000000000000000000000000000000"
+        case .ropsten: return "0x0000000000000000000000000000000000000000"
+        case .rinkeby: return "0x0000000000000000000000000000000000000000"
+        case .poa: return "0x00000000000000000000000000000000000000ac"
+        case .sokol: return "0x0000000000000000000000000000000000000000"
+        case .classic: return "0x000000000000000000000000000000000000003d"
+        case .callisto: return "0x0000000000000000000000000000000000000334"
+        case .gochain: return "0x00000000000000000000000000000000000017ac"
+        case .custom:
+            return "0x0000000000000000000000000000000000000000"
         }
     }
 
@@ -163,38 +194,46 @@ enum RPCServer {
         }
     }
 
-    init(name: String) {
-        self = {
-            switch name {
-            case RPCServer.main.name: return .main
-            case RPCServer.classic.name: return .classic
-            case RPCServer.callisto.name: return .callisto
-            case RPCServer.kovan.name: return .kovan
-            case RPCServer.ropsten.name: return .ropsten
-            case RPCServer.rinkeby.name: return .rinkeby
-            case RPCServer.poa.name: return .poa
-            case RPCServer.sokol.name: return .sokol
-            default: return .main
-            }
-        }()
+    init?(name: String) {
+        switch name {
+        case RPCServer.main.name: self = .main
+        case RPCServer.classic.name: self = .classic
+        case RPCServer.callisto.name: self = .callisto
+        case RPCServer.kovan.name: self = .kovan
+        case RPCServer.ropsten.name: self = .ropsten
+        case RPCServer.rinkeby.name: self = .rinkeby
+        case RPCServer.poa.name: self = .poa
+        case RPCServer.sokol.name: self = .sokol
+        default: return nil
+        }
     }
 
-    init(chainID: Int) {
-        self = {
-            switch chainID {
-            case RPCServer.main.chainID: return .main
-            case RPCServer.classic.chainID: return .classic
-            case RPCServer.callisto.chainID: return .callisto
-            case RPCServer.kovan.chainID: return .kovan
-            case RPCServer.ropsten.chainID: return .ropsten
-            case RPCServer.rinkeby.chainID: return .rinkeby
-            case RPCServer.poa.chainID: return .poa
-            case RPCServer.sokol.chainID: return .sokol
-            case RPCServer.gochain.chainID: return .gochain
-            default: return .main
-            }
-        }()
+    init?(chainID: Int) {
+        switch chainID {
+        case RPCServer.main.chainID: self = .main
+        case RPCServer.classic.chainID: self = .classic
+        case RPCServer.callisto.chainID: self = .callisto
+        case RPCServer.kovan.chainID: self = .kovan
+        case RPCServer.ropsten.chainID: self = .ropsten
+        case RPCServer.rinkeby.chainID: self = .rinkeby
+        case RPCServer.poa.chainID: self = .poa
+        case RPCServer.sokol.chainID: self = .sokol
+        case RPCServer.gochain.chainID: self = .gochain
+        default: return nil
+        }
     }
+
+    var openseaURL: URL? {
+        return URL(string: openseaPath)
+    }
+
+    func opensea(with contract: String, and id: String) -> URL? {
+        return URL(string: (openseaPath + "/assets/\(contract)/\(id)"))
+    }
+
+//    static func get(for coin: Coin) -> RPCServer {
+//
+//    }
 }
 
 extension RPCServer: Equatable {

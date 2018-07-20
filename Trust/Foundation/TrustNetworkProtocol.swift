@@ -1,12 +1,11 @@
 // Copyright DApps Platform Inc. All rights reserved.
 
 import Moya
+import TrustCore
 
 protocol TrustNetworkProtocol {
-    var provider: MoyaProvider<TrustService> { get }
-    var APIProvider: MoyaProvider<TrustAPI> { get }
+    var provider: MoyaProvider<TrustAPI> { get }
     var balanceService: TokensBalanceService { get }
-    var account: WalletInfo { get }
-    var config: Config { get }
-    init(provider: MoyaProvider<TrustService>, APIProvider: MoyaProvider<TrustAPI>, balanceService: TokensBalanceService, account: WalletInfo, config: Config)
+    var address: Address { get }
+    init(provider: MoyaProvider<TrustAPI>, balanceService: TokensBalanceService, address: Address, server: RPCServer)
 }

@@ -12,17 +12,19 @@ protocol WalletInfoViewControllerDelegate: class {
 enum WalletInfoField {
     case name(String)
     case backup(Bool)
+    case mainWallet(Bool)
 }
 
 final class WalletInfoViewController: FormViewController {
 
     lazy var viewModel: WalletInfoViewModel = {
-        return WalletInfoViewModel(wallet: wallet)
+        return WalletInfoViewModel(wallet: wallet, account: currentAccount)
     }()
     var segmentRow: TextFloatLabelRow? {
         return form.rowBy(tag: Values.name)
     }
     let wallet: WalletInfo
+    let currentAccount: Account
 
     weak var delegate: WalletInfoViewControllerDelegate?
 
@@ -35,9 +37,11 @@ final class WalletInfoViewController: FormViewController {
     }()
 
     init(
-        wallet: WalletInfo
+        wallet: WalletInfo,
+        account: Account
     ) {
         self.wallet = wallet
+        self.currentAccount = account
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -51,10 +55,11 @@ final class WalletInfoViewController: FormViewController {
 
         <<< AppFormAppearance.textFieldFloat(tag: Values.name) {
             $0.add(rule: RuleRequired())
-            $0.value = self.wallet.info.name
+            $0.value = self.viewModel.name
         }.cellUpdate { [weak self] cell, _ in
             cell.textField.placeholder = self?.viewModel.nameTitle
             cell.textField.rightViewMode = .always
+            cell.isUserInteractionEnabled = self?.viewModel.canEditName ?? false
         }
 
         for types in viewModel.sections {

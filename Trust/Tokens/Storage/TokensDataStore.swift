@@ -16,25 +16,25 @@ enum TokenAction {
 class TokensDataStore {
     var tokens: Results<TokenObject> {
         return realm.objects(TokenObject.self).filter(NSPredicate(format: "isDisabled == NO"))
-            .sorted(byKeyPath: "createdAt", ascending: true)
+            .sorted(byKeyPath: "order", ascending: true)
     }
     var nonFungibleTokens: Results<NonFungibleTokenCategory> {
         return realm.objects(NonFungibleTokenCategory.self).sorted(byKeyPath: "name", ascending: true)
+    }
+    var tickers: Results<CoinTicker> {
+        return realm.objects(CoinTicker.self).filter("tickersKey == %@", CoinTickerKeyMaker.makeCurrencyKey())
     }
     let realm: Realm
     let account: WalletInfo
     var objects: [TokenObject] {
         return realm.objects(TokenObject.self)
-            .sorted(byKeyPath: "createdAt", ascending: true)
+            .sorted(byKeyPath: "order", ascending: true)
             .filter { !$0.contract.isEmpty }
     }
     var enabledObject: [TokenObject] {
         return realm.objects(TokenObject.self)
-            .sorted(byKeyPath: "createdAt", ascending: true)
+            .sorted(byKeyPath: "order", ascending: true)
             .filter { !$0.isDisabled }
-    }
-    var nonFungibleObjects: [NonFungibleTokenObject] {
-        return realm.objects(NonFungibleTokenObject.self).map { $0 }
     }
 
     init(
@@ -43,75 +43,86 @@ class TokensDataStore {
     ) {
         self.realm = realm
         self.account = account
-        self.addEthToken()
+        self.addNativeCoins()
     }
 
-    private func addEthToken() {
-        if let token = realm.object(ofType: TokenObject.self, forPrimaryKey: EthereumAddress.zero.description) {
+    private func addNativeCoins() {
+        if let token = getToken(for: EthereumAddress.zero) {
             try? realm.write {
                 realm.delete(token)
             }
         }
-
-        try? realm.write {
-            realm.deleteAll()
-        }
-        
         let initialCoins = nativeCoin()
-        add(tokens: initialCoins)
+
+        for token in initialCoins {
+            if let _ = getToken(for: token.contractAddress) {
+            } else {
+                add(tokens: [token])
+            }
+        }
+    }
+
+    func getToken(for address: Address) -> TokenObject? {
+        return realm.object(ofType: TokenObject.self, forPrimaryKey: address.description)
+    }
+
+    func coinTicker(by contract: Address) -> CoinTicker? {
+        return realm.object(ofType: CoinTicker.self, forPrimaryKey: CoinTickerKeyMaker.makePrimaryKey(contract: contract, currencyKey: CoinTickerKeyMaker.makeCurrencyKey()))
     }
 
     private func nativeCoin() -> [TokenObject] {
         return account.accounts.compactMap { ac in
-            guard let coin = ac.coin, let server = getServer(for: coin) else {
+            guard let coin = ac.coin else {
                 return .none
             }
             let viewModel = CoinViewModel(coin: coin)
+            let isDisabled: Bool = {
+                if !account.mainWallet {
+                    return false
+                }
+                return coin.server.isDisabledByDefault
+            }()
 
             return TokenObject(
-                contract: server.contract,
+                contract: coin.server.priceID.description,
                 name: viewModel.name,
-                coin: coin.rawValue,
-                chainID: server.chainID,
+                coin: coin,
                 type: .coin,
                 symbol: viewModel.symbol,
-                decimals: server.decimals,
+                decimals: coin.server.decimals,
                 value: "0",
-                isCustom: false
+                isCustom: false,
+                isDisabled: isDisabled,
+                order: coin.rawValue
             )
         }
     }
 
-    private func getServer(for coin: Coin) -> RPCServer? {
-        switch coin {
-        case .ethereum: return RPCServer.main
-        case .ethereumClassic: return RPCServer.classic
-        case .poa: return RPCServer.poa
-        case .callisto: return RPCServer.callisto
-        case .gochain: return RPCServer.gochain
-        case .bitcoin: return .none
-        }
+    static func token(for server: RPCServer) -> TokenObject {
+        let coin = server.coin
+        let viewModel = CoinViewModel(coin: server.coin)
+        return TokenObject(
+            contract: server.priceID.description,
+            name: viewModel.name,
+            coin: coin,
+            type: .coin,
+            symbol: viewModel.symbol,
+            decimals: server.decimals,
+            value: "0",
+            isCustom: false
+        )
     }
 
-    static func getServer(for token: TokenObject) -> RPCServer? {
-        guard token.chainID > 0 else {
-            return .none
-        }
-        return RPCServer(chainID: token.chainID)
-    }
-
-    func coinTicker(for token: TokenObject) -> CoinTicker? {
-        guard let contract = EthereumAddress(string: token.contract) else { return .none }
-        return tickers().first(where: {
-            return $0.key == CoinTickerKeyMaker.makePrimaryKey(symbol: $0.symbol, contract: contract, currencyKey: $0.tickersKey)
-        })
+    static func getServer(for token: TokenObject) -> RPCServer! {
+        return token.coin.server
     }
 
     func addCustom(token: ERC20Token) {
         let newToken = TokenObject(
             contract: token.contract.description,
             name: token.name,
-            type: .erc20,
+            coin: token.coin,
+            type: .ERC20,
             symbol: token.symbol,
             decimals: token.decimals,
             value: "0",
@@ -124,7 +135,7 @@ class TokensDataStore {
         try? realm.write {
             if let tokenObjects = tokens as? [TokenObject] {
                 let tokenObjectsWithBalance = tokenObjects.map { tokenObject -> TokenObject in
-                    tokenObject.balance = self.getBalance(for: tokenObject, with: self.tickers())
+                    tokenObject.balance = self.getBalance(for: tokenObject.address, with: tokenObject.valueBigInt, and: tokenObject.decimals)
                     return tokenObject
                 }
                 realm.add(tokenObjectsWithBalance, update: true)
@@ -151,30 +162,17 @@ class TokensDataStore {
     }
 
     //Background update of the Realm model.
-    func update(balance: BigInt, for address: EthereumAddress) {
-        if let tokenToUpdate = enabledObject.first(where: { $0.contract == address.description }) {
-            let tokenBalance = self.getBalance(for: tokenToUpdate)
-
-            self.realm.writeAsync(obj: tokenToUpdate) { (realm, _ ) in
+    func update(balance: BigInt, for address: Address) {
+        if let token = getToken(for: address) {
+            let tokenBalance = getBalance(for: token.address, with: balance, and: token.decimals)
+            self.realm.writeAsync(obj: token) { (realm, _ ) in
                 let update = self.objectToUpdate(for: (address, balance), tokenBalance: tokenBalance)
                 realm.create(TokenObject.self, value: update, update: true)
             }
         }
     }
 
-    func update(balances: [EthereumAddress: BigInt]) {
-        for balance in balances {
-            let token = realm.object(ofType: TokenObject.self, forPrimaryKey: balance.key.description)
-            let tokenBalance = self.getBalance(for: token)
-
-            try? realm.write {
-                let update = objectToUpdate(for: balance, tokenBalance: tokenBalance)
-                realm.create(TokenObject.self, value: update, update: true)
-            }
-        }
-    }
-
-    private func objectToUpdate(for balance: (key: EthereumAddress, value: BigInt), tokenBalance: Double) -> [String: Any] {
+    private func objectToUpdate(for balance: (key: Address, value: BigInt), tokenBalance: Double) -> [String: Any] {
         return [
             "contract": balance.key.description,
             "value": balance.value.description,
@@ -194,6 +192,8 @@ class TokensDataStore {
                         "name": token.name,
                         "symbol": token.symbol,
                         "decimals": token.decimals,
+                        "rawType": token.type.rawValue,
+                        "rawCoin": token.coin.rawValue,
                     ]
                     realm.create(TokenObject.self, value: update, update: true)
                 }
@@ -210,16 +210,6 @@ class TokensDataStore {
         }
     }
 
-    func tickers() -> [CoinTicker] {
-        let coinTickers: [CoinTicker] = tickerResultsByTickersKey.map { $0 }
-
-        guard !coinTickers.isEmpty else {
-            return [CoinTicker]()
-        }
-
-        return coinTickers
-    }
-
     private var tickerResultsByTickersKey: Results<CoinTicker> {
         return realm.objects(CoinTicker.self).filter("tickersKey == %@", CoinTickerKeyMaker.makeCurrencyKey())
     }
@@ -230,27 +220,36 @@ class TokensDataStore {
         }
     }
 
-    func getBalance(for token: TokenObject?) -> Double {
-        return getBalance(for: token, with: self.tickers())
+    func getBalance(for address: Address, with value: BigInt, and decimals: Int) -> Double {
+        guard let ticker = coinTicker(by: address),
+            let amountInDecimal = EtherNumberFormatter.full.decimal(from: value, decimals: decimals),
+            let price = Double(ticker.price) else {
+            return TokenObject.DEFAULT_BALANCE
+        }
+        return amountInDecimal.doubleValue * price
     }
 
-    func getBalance(for token: TokenObject?, with tickers: [CoinTicker]) -> Double {
-        guard let token = token else {
-            return TokenObject.DEFAULT_BALANCE
+    func clearBalance() {
+        try? realm.write {
+            let defaultBalanceTokens = tokens.map { token -> TokenObject in
+                let tempToken = token
+                tempToken.balance = TokenObject.DEFAULT_BALANCE
+                return tempToken
+            }
+            realm.add(defaultBalanceTokens, update: true)
         }
+    }
+}
 
-        guard let ticker = tickers.first(where: { $0.contract == token.contract }) else {
-            return TokenObject.DEFAULT_BALANCE
+extension Coin {
+    var server: RPCServer {
+        switch self {
+        case .bitcoin: return RPCServer.main //TODO
+        case .ethereum: return RPCServer.main
+        case .ethereumClassic: return RPCServer.classic
+        case .gochain: return RPCServer.gochain
+        case .callisto: return RPCServer.callisto
+        case .poa: return RPCServer.poa
         }
-
-        guard let amountInBigInt = BigInt(token.value), let price = Double(ticker.price) else {
-            return TokenObject.DEFAULT_BALANCE
-        }
-
-        guard let amountInDecimal = EtherNumberFormatter.full.decimal(from: amountInBigInt, decimals: token.decimals) else {
-            return TokenObject.DEFAULT_BALANCE
-        }
-
-        return amountInDecimal.doubleValue * price
     }
 }

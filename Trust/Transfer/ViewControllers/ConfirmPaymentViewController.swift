@@ -44,8 +44,6 @@ class ConfirmPaymentViewController: UIViewController {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.spacing = 0
         stackView.axis = .vertical
-        //stackView.alignment = .top
-        //stackView.distribution
         return stackView
     }()
 
@@ -132,7 +130,7 @@ class ConfirmPaymentViewController: UIViewController {
             .spacer(height: TransactionAppearance.spacing),
             TransactionAppearance.item(
                 title: detailsViewModel.paymentFromTitle,
-                subTitle: session.account.address.description
+                subTitle: configurator.account.address.description
             ),
             .spacer(height: TransactionAppearance.spacing),
             TransactionAppearance.divider(color: Colors.lightGray, alpha: 0.3),
@@ -187,7 +185,7 @@ class ConfirmPaymentViewController: UIViewController {
     private func reloadView() {
         let viewModel = ConfirmPaymentDetailsViewModel(
             transaction: configurator.previewTransaction(),
-            currencyRate: session.balanceCoordinator.currencyRate,
+            session: session,
             server: server
         )
         self.configure(for: viewModel)
@@ -202,7 +200,7 @@ class ConfirmPaymentViewController: UIViewController {
             configuration: configurator.configuration,
             transfer: configurator.transaction.transfer,
             config: session.config,
-            currencyRate: session.balanceCoordinator.currencyRate
+            session: session
         )
         controller.delegate = self
         self.navigationController?.pushViewController(controller, animated: true)
@@ -222,7 +220,7 @@ class ConfirmPaymentViewController: UIViewController {
 
 extension ConfirmPaymentViewController: StatefulViewController {
     func hasContent() -> Bool {
-        return true
+        return false
     }
 }
 

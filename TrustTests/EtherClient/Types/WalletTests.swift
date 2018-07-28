@@ -3,24 +3,30 @@
 import XCTest
 @testable import Trust
 import TrustCore
+import TrustKeystore
 
 class WalletTests: XCTestCase {
 
     func testPrivateKeyAddressDescription() {
-        let wallet = WalletStruct(type: .privateKey(.make()))
+        let wallet: Wallet = .make()
+        let walletType = WalletType.privateKey(wallet)
 
-        XCTAssertEqual("wallet-private-key-\(wallet.address.description)", wallet.description)
+        XCTAssertEqual("wallet-private-key-\(wallet.identifier)", walletType.description)
     }
 
     func testHDWalletAddressDescription() {
-        let wallet = WalletStruct(type: .hd(.make()))
+        let wallet: Wallet = .make()
+        let walletType = WalletType.hd(wallet)
 
-        XCTAssertEqual("wallet-hd-wallet-\(wallet.address.description)", wallet.description)
+        XCTAssertEqual("wallet-hd-wallet-\(wallet.identifier)", walletType.description)
     }
 
     func testWalletAddressDescription() {
-        let wallet = WalletStruct(type: .address(.make()))
+        let coin: Coin = .ethereum
+        let address: EthereumAddress = .make()
+        let walletType = WalletType.address(coin, address)
 
-        XCTAssertEqual("wallet-address-\(wallet.address.description)", wallet.description)
+        XCTAssertEqual("wallet-address-\(coin.rawValue)-\(address.description)", walletType.description)
     }
 }
+

@@ -4,25 +4,16 @@ import Foundation
 import Moya
 
 enum TrustAPI {
+    case getTransactions(server: RPCServer, address: String, startBlock: Int, page: Int, contract: String?)
+
+    // all
     case prices(TokensPrice)
     case getAllTransactions(addresses: [String: String])
-    case getTransactions(server: RPCServer, address: String, startBlock: Int, page: Int, contract: String?)
-    case getTokens(server: RPCServer, address: String)
-    case getTransaction(server: RPCServer, ID: String)
+    case search(query: String, networks: [Int])
+    case assets(address: String)
+    case getTokens([String: [String]])
     case register(device: PushDevice)
     case unregister(device: PushDevice)
-    case assets(server: RPCServer, address: String)
-    case search(server: RPCServer, token: String)
-}
-
-struct TokensPrice: Encodable {
-    let currency: String
-    let tokens: [TokenPrice]
-}
-
-struct TokenPrice: Encodable {
-    let contract: String
-    let symbol: String
 }
 
 extension TrustAPI: TargetType {
@@ -35,20 +26,18 @@ extension TrustAPI: TargetType {
             return "/tokenPrices"
         case .getTransactions(let value):
             return "/\(value.server.id)/transactions"
-        case .getTokens(let value):
-            return "/\(value.server.id)/tokens"
+        case .getTokens:
+            return "/tokens"
         case .getAllTransactions:
             return "/transactions"
-        case .getTransaction(let value):
-            return "/\(value.server.id)/transactions/\(value.ID)"
         case .register:
-            return "/push/register"
+            return "/notifications/register"
         case .unregister:
-            return "/push/unregister"
-        case .assets(let value):
-            return "/\(value.server.id)/assets"
-        case .search(let value):
-            return "/\(value.server.id)/tokens/list"
+            return "/notifications/unregister"
+        case .assets:
+            return "/assets"
+        case .search:
+            return "/tokens/list"
         }
     }
 
@@ -56,8 +45,7 @@ extension TrustAPI: TargetType {
         switch self {
         case .prices: return .post
         case .getTransactions: return .get
-        case .getTokens: return .get
-        case .getTransaction: return .get
+        case .getTokens: return .post
         case .getAllTransactions: return .post
         case .register: return .post
         case .unregister: return .post
@@ -79,19 +67,16 @@ extension TrustAPI: TargetType {
         case .getAllTransactions(let addresses):
             return .requestParameters(parameters: ["address": addresses], encoding: URLEncoding())
         case .getTokens(let value):
-            return .requestParameters(parameters: [
-                "address": value.address,
-            ], encoding: URLEncoding())
-        case .getTransaction:
-            return .requestPlain
+            return .requestJSONEncodable(value)
         case .register(let device):
             return .requestJSONEncodable(device)
         case .unregister(let device):
             return .requestJSONEncodable(device)
         case .assets(let value):
-            return .requestParameters(parameters: ["address": value.address], encoding: URLEncoding())
-        case .search(let value):
-            return .requestParameters(parameters: ["query": value.token], encoding: URLEncoding())
+            return .requestParameters(parameters: ["address": value], encoding: URLEncoding())
+        case .search(let query, let networks):
+            let networkString =  networks.map { String($0) }.joined(separator: ",")
+            return .requestParameters(parameters: ["query": query, "networks": networkString], encoding: URLEncoding())
         }
     }
 

@@ -5,25 +5,22 @@ import UIKit
 
 struct EditTokenTableCellViewModel {
 
-    let token: TokenObject
-    let coinTicker: CoinTicker?
-    let config: Config
-    let isLocal: Bool
+    private let viewModel: TokenObjectViewModel
+    private let coinTicker: CoinTicker?
+    private let isLocal: Bool
 
     init(
-        token: TokenObject,
+        viewModel: TokenObjectViewModel,
         coinTicker: CoinTicker?,
-        config: Config,
         isLocal: Bool = true
     ) {
-        self.token = token
+        self.viewModel = viewModel
         self.coinTicker = coinTicker
-        self.config = config
         self.isLocal = isLocal
     }
 
     var title: String {
-        return token.title
+        return viewModel.title
     }
 
     var titleFont: UIFont {
@@ -35,20 +32,24 @@ struct EditTokenTableCellViewModel {
     }
 
     var placeholderImage: UIImage? {
-        return R.image.ethereum_logo_256()
+        return viewModel.placeholder
     }
 
     var imageUrl: URL? {
-        return token.imageURL
+        return viewModel.imageURL
     }
 
     var isEnabled: Bool {
-        return !token.isDisabled
+        return !viewModel.token.isDisabled
     }
 
     var contractText: String? {
-        guard !token.isCoin else { return .none }
-        return token.contract
+        switch viewModel.token.type {
+        case .coin:
+            return .none
+        case .ERC20:
+            return viewModel.token.contract + " (ERC20) "
+        }
     }
 
     var isTokenContractLabelHidden: Bool {
@@ -56,5 +57,9 @@ struct EditTokenTableCellViewModel {
             return true
         }
         return false
+    }
+
+    var isSwitchHidden: Bool {
+        return !isLocal
     }
 }

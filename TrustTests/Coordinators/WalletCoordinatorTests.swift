@@ -25,8 +25,10 @@ class WalletCoordinatorTests: XCTestCase {
 
         coordinator.start(.importWallet)
 
-        XCTAssertTrue(coordinator.navigationController.viewControllers[0] is ImportWalletViewController)
+        XCTAssertTrue(coordinator.navigationController.viewControllers[0] is ImportMainWalletViewController)
     }
+
+    //TODO: Add test to import wallet once main. Should open ImportWalletViewController
 
     func testCreateInstantWallet() {
 
@@ -43,17 +45,23 @@ class WalletCoordinatorTests: XCTestCase {
     }
 
     func testPushImportWallet() {
+        let walletObject = WalletObject()
+        walletObject.mainWallet = true
+
+        let wallet = WalletInfo.make(type: .privateKey(.make()), info: walletObject)
         let coordinator = WalletCoordinator(
             navigationController: FakeNavigationController(),
-            keystore: FakeKeystore()
+            keystore: FakeKeystore(wallets: [wallet])
         )
 
         coordinator.start(.welcome)
 
         coordinator.pushImportWallet()
 
-        XCTAssertTrue(coordinator.navigationController.viewControllers[1] is ImportWalletViewController)
+        XCTAssertTrue(coordinator.navigationController.viewControllers[1] is SelectCoinViewController)
     }
+
+    //TODO: Test use case
 }
 
 class FakeWalletCoordinatorDelegate: WalletCoordinatorDelegate {

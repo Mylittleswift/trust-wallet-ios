@@ -3,13 +3,15 @@
 import BigInt
 import Foundation
 import UIKit
+import TrustKeystore
 
 struct TransactionCellViewModel {
 
     private let transaction: Transaction
     private let config: Config
     private let chainState: ChainState
-    private let currentWallet: WalletInfo
+    private let currentAccount: Account
+    private let token: TokenObject
     private let shortFormatter = EtherNumberFormatter.short
 
     private let transactionViewModel: TransactionViewModel
@@ -18,24 +20,22 @@ struct TransactionCellViewModel {
         transaction: Transaction,
         config: Config,
         chainState: ChainState,
-        currentWallet: WalletInfo,
-        server: RPCServer
+        currentAccount: Account,
+        server: RPCServer,
+        token: TokenObject
     ) {
         self.transaction = transaction
         self.config = config
         self.chainState = chainState
-        self.currentWallet = currentWallet
+        self.currentAccount = currentAccount
         self.transactionViewModel = TransactionViewModel(
             transaction: transaction,
             config: config,
-            chainState: chainState,
-            currentWallet: currentWallet,
-            server: server
+            currentAccount: currentAccount,
+            server: server,
+            token: token
         )
-    }
-
-    var confirmations: Int? {
-        return chainState.confirmations(fromBlock: transaction.blockNumber)
+        self.token = token
     }
 
     private var operationTitle: String? {
@@ -56,9 +56,15 @@ struct TransactionCellViewModel {
     }
 
     var title: String {
-        if let operationTitle = operationTitle {
-            return operationTitle
+        switch token.type {
+        case .coin:
+            return stateString
+        case .ERC20:
+            return operationTitle ?? stateString
         }
+    }
+
+    private var stateString: String {
         switch transaction.state {
         case .completed:
             switch transactionViewModel.direction {

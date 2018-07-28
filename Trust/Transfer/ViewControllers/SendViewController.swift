@@ -20,7 +20,8 @@ protocol SendViewControllerDelegate: class {
 
 class SendViewController: FormViewController {
     private lazy var viewModel: SendViewModel = {
-        return .init(transfer: transfer, config: session.config, chainState: chainState, storage: storage, balance: session.balance)
+        let balance = Balance(value: transfer.type.token.valueBigInt)
+        return .init(transfer: transfer, config: session.config, chainState: chainState, storage: storage, balance: balance)
     }()
     weak var delegate: SendViewControllerDelegate?
     struct Values {
@@ -100,10 +101,11 @@ class SendViewController: FormViewController {
     }
 
     func addressField() -> TextFloatLabelRow {
-        let recipientRightView = FieldAppereance.addressFieldRightView(
-            pasteAction: { [unowned self] in self.pasteAction() },
-            qrAction: { [unowned self] in self.openReader() }
-        )
+        let recipientRightView = AddressFieldView()
+        recipientRightView.translatesAutoresizingMaskIntoConstraints = false
+        recipientRightView.pasteButton.addTarget(self, action: #selector(pasteAction), for: .touchUpInside)
+        recipientRightView.qrButton.addTarget(self, action: #selector(openReader), for: .touchUpInside)
+
         return AppFormAppearance.textFieldFloat(tag: Values.address) {
             $0.add(rule: EthereumAddressRule())
             $0.validationOptions = .validatesOnDemand
@@ -266,7 +268,7 @@ extension SendViewController: QRCodeReaderDelegate {
         }
 
         if let value = result.params["amount"] {
-            amountRow?.value = EtherNumberFormatter.full.string(from: BigInt(value) ?? BigInt(), units: .ether)
+            amountRow?.value = value
         } else {
             amountRow?.value = ""
         }

@@ -5,17 +5,6 @@ import Foundation
 import TrustKeystore
 import TrustCore
 
-extension WalletStruct {
-    static func make(
-        type: Trust.WalletType = WalletType.privateKey(.make())
-    ) -> WalletStruct {
-        return WalletStruct(
-            type: type
-        )
-    }
-}
-
-
 
 extension Wallet {
     static func k() -> KeystoreKey {
@@ -25,11 +14,13 @@ extension Wallet {
     }
 
     static func make(
-        keyURL: URL = URL(fileURLWithPath: ""),
         key: KeystoreKey = Wallet.k()
     ) -> Wallet {
+        let datadir = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]
+        let url = URL(fileURLWithPath: datadir + "/k/test.json")
+
         let wallet = Wallet(
-            keyURL: URL(fileURLWithPath: ""),
+            keyURL: url,
             key: key
         )
         let _ = try! wallet.getAccount(password: "hello")
@@ -42,7 +33,7 @@ extension Account {
         return Account(
             wallet: .make(),
             address: EthereumAddress.make(),
-            derivationPath: Blockchain.ethereum.derivationPath(at: 0)
+            derivationPath: Coin.ethereum.derivationPath(at: 0)
         )
     }
 }

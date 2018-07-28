@@ -39,6 +39,7 @@ class AppCoordinator: NSObject, Coordinator {
 
     func start() {
         inializers()
+        migrations()
         appTracker.start()
         handleNotifications()
         applyStyle()
@@ -91,6 +92,36 @@ class AppCoordinator: NSObject, Coordinator {
         }
     }
 
+    private func migrations() {
+        let multiCoinCigration = MultiCoinMigration(keystore: keystore, appTracker: appTracker)
+        let run = multiCoinCigration.start()
+        if run {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.showMigrationMessage()
+            }
+        }
+    }
+
+    private func showMigrationMessage() {
+        let alertController = UIAlertController(
+            title: "Great News! Big Update! 🚀",
+            message: "We have made a huge progress towards supporting and simplifying management of your tokens across blockchains. \n\nTake a look on how to create Multi-Coin Wallet in Trust!",
+            preferredStyle: UIAlertControllerStyle.alert
+        )
+        alertController.popoverPresentationController?.sourceView = self.navigationController.view
+        alertController.addAction(
+            UIAlertAction(
+                title: R.string.localizable.learnMore(),
+                style: UIAlertActionStyle.default,
+                handler: { [weak self] _ in
+                    let url = URL(string: "https://medium.com/p/fa50f258274b")
+                    self?.inCoordinator?.showTab(.browser(openURL: url))
+                }
+            )
+        )
+        navigationController.present(alertController, animated: true, completion: nil)
+    }
+
     func handleNotifications() {
         UIApplication.shared.applicationIconBadgeNumber = 0
     }
@@ -113,8 +144,21 @@ class AppCoordinator: NSObject, Coordinator {
     func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
         pushNotificationRegistrar.didRegister(
             with: deviceToken,
-            addresses: keystore.wallets.map { $0.address }
+            networks: networks(for: keystore.wallets)
         )
+    }
+
+    private func networks(for wallets: [WalletInfo]) -> [Int: [String]] {
+        var result: [Int: [String]] = [:]
+        wallets.forEach { wallet in
+            for account in wallet.accounts {
+                guard let coin = account.coin else { break }
+                var elements: [String] = result[coin.rawValue] ?? []
+                elements.append(account.address.description)
+                result[coin.rawValue] = elements
+            }
+        }
+        return result
     }
 
     func showInitialWalletCoordinator(entryPoint: WalletEntryPoint) {

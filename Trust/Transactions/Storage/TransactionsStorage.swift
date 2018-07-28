@@ -17,13 +17,6 @@ class TransactionsStorage {
         return realm.objects(Transaction.self).filter(NSPredicate(format: "id!=''")).sorted(byKeyPath: "date", ascending: false)
     }
 
-    var latestTransaction: Transaction? {
-        return realm.objects(Transaction.self)
-            .filter(NSPredicate(format: "from == %@", account.address.description))
-            .sorted(byKeyPath: "nonce", ascending: false)
-            .first
-    }
-
     let titleFormmater: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d yyyy"
@@ -41,6 +34,13 @@ class TransactionsStorage {
     ) {
         self.realm = realm
         self.account = account
+    }
+
+    func latestTransaction(for address: Address, coin: Coin) -> Transaction? {
+        return transactions
+            .filter(NSPredicate(format: "from == %@ && rawCoin == %d", address.description, coin.rawValue))
+            .sorted(byKeyPath: "nonce", ascending: false)
+            .first
     }
 
     var completedObjects: [Transaction] {
@@ -80,13 +80,14 @@ class TransactionsStorage {
     }
 
     func delete(_ items: [Transaction]) {
-        try! realm.write {
+        try? realm.write {
             realm.delete(items)
         }
     }
 
     func update(state: TransactionState, for transaction: Transaction) {
-        try! realm.write {
+        NSLog("transaction \(transaction)")
+        try? realm.write {
             let tempObject = transaction
             tempObject.internalState = state.rawValue
             realm.add(tempObject, update: true)
@@ -95,13 +96,13 @@ class TransactionsStorage {
 
     func removeTransactions(for states: [TransactionState]) {
         let objects = realm.objects(Transaction.self).filter { states.contains($0.state) }
-        try! realm.write {
+        try? realm.write {
             realm.delete(objects)
         }
     }
 
     func deleteAll() {
-        try! realm.write {
+        try? realm.write {
             realm.delete(realm.objects(Transaction.self))
         }
     }

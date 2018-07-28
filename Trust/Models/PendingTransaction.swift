@@ -43,12 +43,15 @@ extension PendingTransaction {
 
 extension Transaction {
     static func from(
-        transaction: PendingTransaction
+        initialTransaction: Transaction,
+        transaction: PendingTransaction,
+        coin: Coin
     ) -> Transaction? {
         guard
             let from = EthereumAddress(string: transaction.from) else {
                 return .none
         }
+        //TODO; Probably make sense to update values on initialTransaction and not create a new one.
         let to = EthereumAddress(string: transaction.to)?.description ?? transaction.to
         return Transaction(
             id: transaction.hash,
@@ -61,7 +64,8 @@ extension Transaction {
             gasUsed: "",
             nonce: transaction.nonce,
             date: Date(),
-            localizedOperations: [],
+            coin: coin,
+            localizedOperations: Array(initialTransaction.localizedOperations),
             state: .pending
         )
     }

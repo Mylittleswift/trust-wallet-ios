@@ -81,6 +81,7 @@ extension SettingsCoordinator: SettingsViewControllerDelegate {
     func didAction(action: SettingsAction, in viewController: SettingsViewController) {
         switch action {
         case .currency:
+            session.tokensStorage.clearBalance()
             restart(for: session.account)
         case .pushNotifications(let change):
             switch change {
@@ -99,6 +100,10 @@ extension SettingsCoordinator: SettingsViewControllerDelegate {
         case .clearBrowserCache:
             cleadCache()
             CookiesStore.delete()
+        case .clearTransactions:
+            session.transactionsStorage.deleteAll()
+        case .clearTokens:
+            session.tokensStorage.deleteAll()
         case .wallets:
             showWallets()
         }
@@ -116,6 +121,7 @@ extension SettingsCoordinator: WalletsCoordinatorDelegate {
     }
 
     func didSelect(wallet: WalletInfo, in coordinator: WalletsCoordinator) {
+        coordinator.navigationController.removeChildCoordinators()
         delegate?.didRestart(with: wallet, in: self)
     }
 }

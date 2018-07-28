@@ -5,6 +5,7 @@ import UIKit
 import RealmSwift
 import TrustCore
 import PromiseKit
+import TrustKeystore
 
 protocol TokensViewModelDelegate: class {
     func refresh()
@@ -17,13 +18,8 @@ final class TokensViewModel: NSObject {
     var tokensNetwork: NetworkProtocol
     let tokens: Results<TokenObject>
     var tokensObserver: NotificationToken?
-    let wallet: WalletInfo
     let transactionStore: TransactionsStorage
-
-    var headerViewTitle: String {
-        guard let coin = wallet.currentAccount.coin else { return "" }
-        return CoinViewModel(coin: coin).displayName
-    }
+    let session: WalletSession
 
     var headerBalance: String {
         return amount ?? "0.00"
@@ -61,17 +57,23 @@ final class TokensViewModel: NSObject {
         return UIFont.systemFont(ofSize: 13, weight: .light)
     }
 
+    var all: [TokenViewModel] {
+        return Array(tokens).map { token in
+            return TokenViewModel(token: token, config: config, store: store, transactionsStore: transactionStore, tokensNetwork: tokensNetwork, session: session)
+        }
+    }
+
     weak var delegate: TokensViewModelDelegate?
 
     init(
+        session: WalletSession,
         config: Config = Config(),
-        wallet: WalletInfo,
         store: TokensDataStore,
         tokensNetwork: NetworkProtocol,
         transactionStore: TransactionsStorage
     ) {
+        self.session = session
         self.config = config
-        self.wallet = wallet
         self.store = store
         self.tokensNetwork = tokensNetwork
         self.tokens = store.tokens
@@ -84,19 +86,8 @@ final class TokensViewModel: NSObject {
     }
 
     private var amount: String? {
-        let totalAmount = tokens.lazy.flatMap { [weak self] in
-            self?.amount(for: $0)
-        }.reduce(0, +)
+        let totalAmount = tokens.lazy.map { $0.balance }.reduce(0.0, +)
         return CurrencyFormatter.formatter.string(from: NSNumber(value: totalAmount))
-    }
-
-    private func amount(for token: TokenObject) -> Double {
-        guard let coinTicker = store.coinTicker(for: token) else {
-            return 0
-        }
-        let tokenValue = CurrencyFormatter.plainFormatter.string(from: token.valueBigInt, decimals: token.decimals).doubleValue
-        let price = Double(coinTicker.price) ?? 0
-        return tokenValue * price
     }
 
     func numberOfItems(for section: Int) -> Int {
@@ -111,29 +102,22 @@ final class TokensViewModel: NSObject {
         return tokens[path.row].isCustom
     }
 
-    func canDisable(for path: IndexPath) -> Bool {
-        return true
-    }
-
     func cellViewModel(for path: IndexPath) -> TokenViewCellViewModel {
         let token = tokens[path.row]
-        return TokenViewCellViewModel(token: token, ticker: store.coinTicker(for: token), store: transactionStore)
+        return TokenViewCellViewModel(
+            viewModel: TokenObjectViewModel(token: token),
+            ticker: store.coinTicker(by: token.address),
+            store: transactionStore
+        )
     }
 
-    func updateEthBalance() {
-        firstly {
-            tokensNetwork.ethBalance()
-        }.done { [weak self] balance in
-            guard let `self` = self, let address = EthereumAddress(string: self.tokensNetwork.address.description) else { return }
-            self.store.update(balances: [address: balance.value])
-        }.catch { error in
-           NSLog("updateEthBalance \(error)")
-        }
+    func updateBalances() {
+        balances(for: Array(self.tokens))
     }
 
     private func tokensInfo() {
         firstly {
-            tokensNetwork.tokensList(for: wallet.address)
+            tokensNetwork.tokensList()
         }.done { [weak self] tokens in
              self?.store.update(tokens: tokens, action: .updateInfo)
         }.catch { error in
@@ -141,9 +125,7 @@ final class TokensViewModel: NSObject {
         }.finally { [weak self] in
             guard let strongSelf = self else { return }
             let tokens = strongSelf.store.objects
-            let enabledTokens = strongSelf.store.enabledObject
             strongSelf.prices(for: tokens)
-            strongSelf.balances(for: enabledTokens)
         }
     }
 
@@ -152,34 +134,39 @@ final class TokensViewModel: NSObject {
         firstly {
             tokensNetwork.tickers(with: prices)
         }.done { [weak self] tickers in
-            self?.store.saveTickers(tickers: tickers)
+            guard let strongSelf = self else { return }
+            strongSelf.store.saveTickers(tickers: tickers)
         }.catch { error in
             NSLog("prices \(error)")
         }.finally { [weak self] in
-            self?.delegate?.refresh()
+            guard let strongSelf = self else { return }
+            let enabledTokens = strongSelf.store.enabledObject
+            strongSelf.balances(for: enabledTokens)
         }
     }
 
     private func balances(for tokens: [TokenObject]) {
-
+        let balances: [BalanceNetworkProvider] = tokens.compactMap {
+            return TokenViewModel.balance(for: $0, wallet: session.account)
+        }
         let operationQueue: OperationQueue = OperationQueue()
         operationQueue.qualityOfService = .background
 
-        let balancesOperations = Array(tokens.lazy.map { TokenBalanceOperation(network: self.tokensNetwork, address: $0.address, store: self.store) })
+        let balancesOperations = Array(balances.lazy.map {
+            TokenBalanceOperation(balanceProvider: $0, store: self.store)
+        })
+
+        operationQueue.operations.onFinish { [weak self] in
+            DispatchQueue.main.async {
+                self?.delegate?.refresh()
+            }
+        }
+
         operationQueue.addOperations(balancesOperations, waitUntilFinished: false)
     }
 
     func updatePendingTransactions() {
-        let transactions = transactionStore.pendingObjects
-        for transaction in transactions {
-            tokensNetwork.update(for: transaction) { result in
-                switch result {
-                case .success(let transaction, let state):
-                    self.transactionStore.update(state: state, for: transaction)
-                case .failure: break
-                }
-            }
-        }
+        all.forEach { $0.updatePending() }
     }
 
     func fetch() {

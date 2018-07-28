@@ -23,7 +23,7 @@ final class LocalSchemeCoordinator: Coordinator {
     }()
 
     lazy var server: RPCServer = {
-        return RPCServer(chainID: 1)!
+        return session.currentRPC
     }()
 
     init(
@@ -132,8 +132,9 @@ extension LocalSchemeCoordinator: WalletDelegate {
     }
 
     func signTransaction(_ transaction: TrustCore.Transaction, completion: @escaping (Result<Data, WalletSDKError>) -> Void) {
+        let token = TokensDataStore.token(for: server)
         let transaction = UnconfirmedTransaction(
-            transfer: Transfer(server: server, type: .ether(destination: .none)),
+            transfer: Transfer(server: server, type: .ether(token, destination: .none)),
             value: transaction.amount,
             to: transaction.to,
             data: transaction.payload,

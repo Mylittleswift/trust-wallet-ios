@@ -3,6 +3,7 @@
 import Foundation
 import BigInt
 import RealmSwift
+import TrustKeystore
 import TrustCore
 
 final class TokenViewModel {
@@ -19,17 +20,20 @@ final class TokenViewModel {
     private var transactionToken: NotificationToken?
 
     let token: TokenObject
+    private lazy var tokenObjectViewModel: TokenObjectViewModel = {
+        return TokenObjectViewModel(token: token)
+    }()
 
     var title: String {
-        return token.displayName
+        return tokenObjectViewModel.title
     }
 
     var imageURL: URL? {
-        return token.imageURL
+        return tokenObjectViewModel.imageURL
     }
 
     var imagePlaceholder: UIImage? {
-        return R.image.ethereum_logo_256()
+        return tokenObjectViewModel.placeholder
     }
 
     private var symbol: String {
@@ -50,6 +54,10 @@ final class TokenViewModel {
         return .white
     }()
 
+    lazy var transactionsProvider: EthereumTransactionsProvider = {
+        return EthereumTransactionsProvider(server: server)
+    }()
+
     var amount: String {
         return String(
             format: "%@ %@",
@@ -61,6 +69,14 @@ final class TokenViewModel {
     var numberOfSections: Int {
         return tokenTransactionSections.count
     }
+
+    var server: RPCServer {
+        return TokensDataStore.getServer(for: token)
+    }
+
+    lazy var currentAccount: Account = {
+        return session.account.accounts.filter { $0.coin == token.coin }.first!
+    }()
 
     init(
         token: TokenObject,
@@ -80,7 +96,15 @@ final class TokenViewModel {
     }
 
     var ticker: CoinTicker? {
-        return store.coinTicker(for: token)
+        return store.coinTicker(by: token.address)
+    }
+
+    var allTransactions: [Transaction] {
+        return Array(tokenTransactions!)
+    }
+
+    var pendingTransactions: [Transaction] {
+        return Array(tokenTransactions!.filter { $0.state == TransactionState.pending })
     }
 
     // Market Price
@@ -98,7 +122,8 @@ final class TokenViewModel {
     }
 
     var totalFiatAmount: String? {
-        return TokensLayout.cell.totalFiatAmount(for: ticker, token: token)
+        guard let value = TokensLayout.cell.totalFiatAmount(token: token) else { return .none }
+        return " (" + value + ")"
     }
 
     var fiatAmountTextColor: UIColor {
@@ -107,10 +132,6 @@ final class TokenViewModel {
 
     var fiatAmountFont: UIFont {
         return UIFont.systemFont(ofSize: 14, weight: .regular)
-    }
-
-    var currencyAmount: String? {
-        return TokensLayout.cell.currencyAmount(for: ticker, token: token)
     }
 
     var amountTextColor: UIColor {
@@ -130,9 +151,6 @@ final class TokenViewModel {
     }
 
     var percentChange: String? {
-        guard let _ = currencyAmount else {
-            return .none
-        }
         return TokensLayout.cell.percentChange(for: ticker)
     }
 
@@ -141,8 +159,9 @@ final class TokenViewModel {
     }
 
     func fetch() {
-        getTokenBalance()
+        updateTokenBalance()
         fetchTransactions()
+        updatePending()
     }
 
     func tokenObservation(with completion: @escaping (() -> Void)) {
@@ -189,43 +208,89 @@ final class TokenViewModel {
     }
 
     func cellViewModel(for indexPath: IndexPath) -> TransactionCellViewModel {
-        let server = RPCServer(chainID: 1)!
-        return TransactionCellViewModel(transaction: tokenTransactionSections[indexPath.section].items[indexPath.row], config: config, chainState: ChainState(server: server), currentWallet: session.account, server: server)
-        //TODO: Refactor
+        return TransactionCellViewModel(
+            transaction: tokenTransactionSections[indexPath.section].items[indexPath.row],
+            config: config,
+            chainState: ChainState(server: server),
+            currentAccount: currentAccount,
+            server: token.coin.server,
+            token: token
+        )
     }
 
     func hasContent() -> Bool {
         return !tokenTransactionSections.isEmpty
     }
 
-    private func getTokenBalance() {
-        tokensNetwork.tokenBalance(for: token.address) { [weak self] (result) in
-            guard let balance = result, let token = self?.token else {
-                return
+    private func updateTokenBalance() {
+        guard let provider = TokenViewModel.balance(for: token, wallet: session.account) else {
+            return
+        }
+        let _ = provider.balance().done { [weak self] balance in
+            self?.store.update(balance: balance, for: provider.addressUpdate)
+        }
+    }
+
+    static func balance(for token: TokenObject, wallet: WalletInfo) -> BalanceNetworkProvider? {
+        let first = wallet.accounts.filter { $0.coin == token.coin }.first
+        guard let account = first else { return .none }
+        let networkBalance: BalanceNetworkProvider? = {
+            switch token.type {
+            case .coin:
+                return CoinNetworkProvider(
+                    server: token.coin.server,
+                    address: EthereumAddress(string: account.address.description)!,
+                    addressUpdate: token.address
+                )
+            case .ERC20:
+                return TokenNetworkProvider(
+                    server: token.coin.server,
+                    address: EthereumAddress(string: account.address.description)!,
+                    contract: token.address,
+                    addressUpdate: token.address
+                )
             }
-            self?.store.update(balances: [token.address: balance.value])
+        }()
+        return networkBalance
+    }
+
+    func updatePending() {
+        let transactions = pendingTransactions
+
+        for transaction in transactions {
+            transactionsProvider.update(for: transaction) { result in
+                switch result {
+                case .success(let transaction, let state):
+                    self.transactionsStore.update(state: state, for: transaction)
+                case .failure: break
+                }
+            }
         }
     }
 
     private func fetchTransactions() {
         let contract: String? = {
-            guard let _ = token.coin else {
-                return .none
+            switch token.type {
+            case .coin: return .none
+            case .ERC20: return token.contract
             }
-            return token.contract
         }()
-
-        tokensNetwork.transactions(for: session.account.address, startBlock: 1, page: 0, contract: contract) { result in
+        tokensNetwork.transactions(for: currentAccount.address, on: server, startBlock: 1, page: 0, contract: contract) { result in
             guard let transactions = result.0 else { return }
             self.transactionsStore.add(transactions)
         }
     }
 
     private func prepareDataSource(for token: TokenObject) {
-        if token.coin != nil {
-            tokenTransactions = transactionsStore.realm.objects(Transaction.self).filter(NSPredicate(format: "localizedOperations.@count == 0")).sorted(byKeyPath: "date", ascending: false)
-        } else {
-            tokenTransactions = transactionsStore.realm.objects(Transaction.self).filter(NSPredicate(format: "%K ==[cd] %@", "to", token.contract)).sorted(byKeyPath: "date", ascending: false)
+        switch token.type {
+        case .coin:
+            tokenTransactions = transactionsStore.realm.objects(Transaction.self)
+                .filter(NSPredicate(format: "rawCoin = %d", server.coin.rawValue))
+                .sorted(byKeyPath: "date", ascending: false)
+        case .ERC20:
+            tokenTransactions = transactionsStore.realm.objects(Transaction.self)
+                .filter(NSPredicate(format: "rawCoin = %d && %K ==[cd] %@", server.coin.rawValue, "to", token.contract))
+                .sorted(byKeyPath: "date", ascending: false)
         }
         updateSections()
     }

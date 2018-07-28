@@ -112,6 +112,8 @@ final class TokenViewCell: UITableViewCell {
 
     func configure(viewModel: TokenViewCellViewModel) {
 
+        containerForImageView.badge(text: badgeText(for: viewModel.viewModel.token, in: viewModel.store))
+
         titleLabel.text = viewModel.title
         titleLabel.textColor = viewModel.titleTextColor
         titleLabel.font = viewModel.titleFont
@@ -133,12 +135,12 @@ final class TokenViewCell: UITableViewCell {
         currencyAmountLabel.font = viewModel.currencyAmountFont
 
         symbolImageView.kf.setImage(
-            with: viewModel.imageUrl,
+            with: viewModel.imageURL,
             placeholder: viewModel.placeholderImage
         )
 
         backgroundColor = viewModel.backgroundColor
-        observePendingTransactions(from: viewModel.store, with: viewModel.token.address)
+        observePendingTransactions(from: viewModel.store, with: viewModel.viewModel.token)
     }
 
     private func updateSeparatorInset() {
@@ -149,11 +151,23 @@ final class TokenViewCell: UITableViewCell {
         )
     }
 
-    private func observePendingTransactions(from storage: TransactionsStorage, with contract: EthereumAddress) {
+    private func observePendingTransactions(from storage: TransactionsStorage, with token: TokenObject) {
         pendingTokenTransactionsObserver = storage.transactions.observe { [weak self] _ in
-            let items = storage.pendingObjects.filter { $0.contractAddress == contract }
-            self?.containerForImageView.badge(text: items.isEmpty ? nil : String(items.count))
+            guard let `self` = self else { return }
+            self.containerForImageView.badge(text: self.badgeText(for: token, in: storage))
         }
+    }
+
+    func badgeText(for token: TokenObject, in storage: TransactionsStorage) -> String? {
+        let items = storage.pendingObjects.filter {
+            switch token.type {
+            case .coin:
+                return $0.coin == token.coin && $0.localizedOperations.isEmpty
+            case .ERC20:
+                return $0.contractAddress == token.contractAddress
+            }
+        }
+        return items.isEmpty ? .none : String(items.count)
     }
 
     deinit {

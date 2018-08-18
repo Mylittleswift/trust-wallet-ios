@@ -5,10 +5,12 @@ import UIKit
 
 final class NFTDetailsViewModel {
 
-    let token: NonFungibleTokenObject
+    let token: CollectibleTokenObject
+    let server: RPCServer
 
-    init(token: NonFungibleTokenObject) {
+    init(token: CollectibleTokenObject, server: RPCServer) {
         self.token = token
+        self.server = server
     }
 
     var title: String {
@@ -48,6 +50,6 @@ final class NFTDetailsViewModel {
     }
 
     var externalURL: URL? {
-        return URL(string: "")!// Config().opensea(with: token.contract, and: token.id)
+        return server.opensea(with: token.contract, and: token.id)
     }
 }

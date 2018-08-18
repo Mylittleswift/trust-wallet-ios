@@ -72,13 +72,12 @@ final class SettingsViewController: FormViewController, Coordinator {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = NSLocalizedString("settings.navigation.title", value: "Settings", comment: "")
-
+        title = R.string.localizable.settingsNavigationTitle()
         form = Section()
 
             <<< walletsRow(for: session.account)
 
-            +++ Section(NSLocalizedString("settings.security.label.title", value: "Security", comment: ""))
+            +++ Section(R.string.localizable.settingsSecurityLabelTitle())
 
             <<< SwitchRow(Values.passcodeRow) { [weak self] in
                 $0.title = self?.viewModel.passcodeTitle
@@ -128,31 +127,26 @@ final class SettingsViewController: FormViewController, Coordinator {
             <<< linkProvider(type: .facebook)
             <<< linkProvider(type: .discord)
 
-            +++ Section(R.string.localizable.settingsSupportTitle())
-
-            <<< AppFormAppearance.button { button in
-                button.title = R.string.localizable.shareWithFriends()
-                button.cell.imageView?.image = R.image.settings_colorful_share()
-            }.onCellSelection { [unowned self] cell, _  in
-                self.helpUsCoordinator.presentSharing(in: self, from: cell.contentView)
-            }
+            +++ Section()
+            <<< linkProvider(type: .helpCenter)
 
             +++ Section()
+            <<< shareWithFriendsRow()
 
+            +++ Section()
             <<< aboutRow()
-            <<< supportRow()
 
             +++ Section()
-
             <<< developersRow()
+    }
 
-            +++ Section()
-
-            <<< TextRow {
-                $0.title = R.string.localizable.settingsVersionLabelTitle()
-                $0.value = Bundle.main.fullVersion
-                $0.disabled = true
-            }
+    private func shareWithFriendsRow() -> ButtonRow {
+        return AppFormAppearance.button { button in
+            button.title = R.string.localizable.shareWithFriends()
+            button.cell.imageView?.image = R.image.settings_colorful_share()
+        }.onCellSelection { [unowned self] cell, _  in
+            self.helpUsCoordinator.presentSharing(in: self, from: cell.contentView)
+        }
     }
 
     private func walletsRow(for wallet: WalletInfo) -> ButtonRow {
@@ -196,30 +190,14 @@ final class SettingsViewController: FormViewController, Coordinator {
             selectorController.sectionHeaderTitleForKey = { option in
                 switch option {
                 case Values.currencyPopularKey:
-                    return NSLocalizedString("settings.currency.popular.label.title", value: "Popular", comment: "")
+                    return R.string.localizable.settingsCurrencyPopularLabelTitle()
                 case Values.currencyAllKey:
-                    return NSLocalizedString("settings.currency.all.label.title", value: "All", comment: "")
+                    return R.string.localizable.settingsCurrencyAllLabelTitle()
                 default: return ""
                 }
             }
         }.cellSetup { cell, _ in
             cell.imageView?.image = R.image.settings_colorful_currency()
-        }
-    }
-
-    private func supportRow() -> ButtonRow {
-        return AppFormAppearance.button { row in
-            row.cellStyle = .value1
-            row.presentationMode = .show(controllerProvider: ControllerProvider<UIViewController>.callback { [weak self] in
-                let controller = SupportViewController()
-                controller.delegate = self
-                return controller
-            }, onDismiss: { _ in })
-        }.cellUpdate { cell, _ in
-            cell.textLabel?.textColor = .black
-            cell.imageView?.image = R.image.settings_colorful_support()
-            cell.textLabel?.text = NSLocalizedString("settings.support.title", value: "Support", comment: "")
-            cell.accessoryType = .disclosureIndicator
         }
     }
 
@@ -234,7 +212,7 @@ final class SettingsViewController: FormViewController, Coordinator {
         }.cellUpdate { cell, _ in
             cell.textLabel?.textColor = .black
             cell.imageView?.image = R.image.settings_colorful_about()
-            cell.textLabel?.text = NSLocalizedString("settings.about.title", value: "About", comment: "")
+            cell.textLabel?.text = R.string.localizable.settingsAboutTitle()
             cell.accessoryType = .disclosureIndicator
         }
     }
@@ -346,12 +324,6 @@ extension SettingsViewController: LockCreatePasscodeCoordinatorDelegate {
         coordinator.lockViewController.willFinishWithResult?(false)
         navigationController?.dismiss(animated: true, completion: nil)
         removeCoordinator(coordinator)
-    }
-}
-
-extension SettingsViewController: SupportViewControllerDelegate {
-    func didPressURL(_ url: URL, in controller: SupportViewController) {
-        openURLInBrowser(url)
     }
 }
 
